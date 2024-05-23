@@ -9,7 +9,7 @@ date: "`r Sys.Date()`"
 site: bookdown::bookdown_site
 documentclass: book
 bibliography: [book.bib, packages.bib]
-url: https://alberdilab.github.io/domestic_feral_cat_metagenomics
+url: https://alberdilab.github.io/sled_dogs_metagenomics
 description: |
   Data analysis code for the study on the comparison between domestic and feral cats.
 link-citations: yes
