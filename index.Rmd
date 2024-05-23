@@ -11,7 +11,7 @@ documentclass: book
 bibliography: [book.bib, packages.bib]
 url: https://alberdilab.github.io/sled_dogs_metagenomics
 description: |
-  Data analysis code for the study on the comparison between domestic and feral cats.
+  Data analysis code for the study on the comparison between sled dogs from Daneborg and Ittoqqortoormii.
 link-citations: yes
 github-repo: alberdilab/sled_dogs_metagenomics
 ---
@@ -25,7 +25,7 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-This webbook contains all the code used for data analysis in study on the recovery of metagenome‑assembled genomes and derived microbial communities from lizard fecal and cloacal samples.
+This webbook contains all the code used for data analysis in study on the recovery of metagenome‑assembled genomes and derived microbial communities from faecal samples of sled dogs collected in Daneborg and Ittoqqortoormii.
 
 ## Prepare the R environment
 
@@ -39,7 +39,7 @@ RStudio > New Project > Version Control > Git
 
 And indicating the following git repository:
 
-> https://github.com/alberdilab/domestic_feral_cat_metagenomics.git
+> https://github.com/alberdilab/sled_dogs_metagenomics.git
 
 Once the R project has been created, follow the instructions and code chunks shown in this webbook.
 
