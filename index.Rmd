@@ -1,7 +1,8 @@
 ---
 title: "AlberdiLab | "
-subtitle: "Domestic-feral cat metagenomics"
+subtitle: "Sled dogs metagenomics"
 author:
+  - Elsa Margaret Krook Brenner^[University of Copenhagen, elsa.brenner@sund.ku.dk]
   - Ostaizka Aizpurua^[University of Copenhagen, ostaizka.aizpurua@sund.ku.dk]
   - Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk]
 date: "`r Sys.Date()`"
@@ -12,7 +13,7 @@ url: https://alberdilab.github.io/domestic_feral_cat_metagenomics
 description: |
   Data analysis code for the study on the comparison between domestic and feral cats.
 link-citations: yes
-github-repo: alberdilab/domestic_feral_cat_metagenomics
+github-repo: alberdilab/sled_dogs_metagenomics
 ---
 
 ```{r knitr_opts, echo=FALSE}
