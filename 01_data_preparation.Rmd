@@ -4,13 +4,6 @@
 
 Load the original data files outputted by the bioinformatic pipeline.
 
-```{r libraries, message=FALSE, warning=FALSE, echo=FALSE}
-## Load required libraries
-library(tidyverse)
-library(ape)
-library(distillR)
-```
-
 ### Sample metadata
 
 ```{r load_sample_metadata, warning=FALSE, comments="", message=FALSE}
