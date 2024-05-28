@@ -1,0 +1,265 @@
+
+```{r loaddata, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+load("data/data.Rdata")
+```
+
+```{r summary, echo=FALSE, message=FALSE, warning=FALSE}
+read_counts_row <- column_to_rownames(read_counts, "genome")
+nsamples <- ncol(read_counts_row) # define number of samples, by reading from the counts table
+metagenomic_bases <- sum(sample_metadata$metagenomic_bases)
+host_bases <- sum(sample_metadata$host_bases)
+discarded_bases <- sum(round(((sample_metadata$metagenomic_bases+sample_metadata$host_bases)/(1-sample_metadata$bases_lost_fastp_percent))-(sample_metadata$metagenomic_bases+sample_metadata$host_bases))) #define amount of discarded bases from quality filtering
+total_bases <- discarded_bases + host_bases + metagenomic_bases
+singlem_bases <- sum(sample_metadata$metagenomic_bases * sample_metadata$singlem_fraction) 
+nmags <- nrow(read_counts_row) # establish number of MAGs for analysis
+
+sequencing_depth <- colSums(read_counts_row)
+sequencing_depth_sum <- sum(sequencing_depth)
+sequencing_depth_mean <- mean(sequencing_depth)
+sequencing_depth_sd <- sd(sequencing_depth)
+```
+
+# Data pre-processing
+
+## General data statistics
+
+**Number of samples**
+```{r nsamples, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+ncol(read_counts_row) # 58 samples
+```
+
+**Number of MAGs**
+The number of metagenome-assembled genomes (MAG) or draft bacterial genomes reconstructed from the metagenomic data.
+
+```{r nmags, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+cat(nmags) # 555 MAGs
+```
+
+**Amount of total data (GB):**
+The amount of total DNA data sequenced in gigabases (GB, one billion nucleotide bases).
+
+```{r totalGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+total_bases <- discarded_bases + host_bases + metagenomic_bases
+totalgb <- round(total_bases / 1000000000,2) # convert to GB 
+cat(totalgb) # 333.71 GB produced
+```
+
+**Amount of discarded data (GB):**
+The amount of data discarded due to low quality or lack of informativeness during data preprocesing. Discarding 5-15% of the produced data is within the expected range, due to formation of adaptor dimers, inclusion of adaptors in sequencing reads due to short insert sizes, low sequencing quality, etc.
+
+```{r discardedGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+discardgb <- sum(round(((sample_metadata$metagenomic_bases+sample_metadata$host_bases)/(1-sample_metadata$bases_lost_fastp_percent))-(sample_metadata$metagenomic_bases+sample_metadata$host_bases)))/1000000000
+ # quality filtering
+cat(discardgb) # 10.37 GB discarded
+```
+
+**Amount of discarded data (in % of the raw data):**
+
+```{r %discarded, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+discarddata <- round(discarded_bases / total_bases * 100,2) 
+cat(discarddata) # 3.11% removed after quality filtering
+```
+
+**Amount of host data (GB):**
+The amount of data mapped against the host genome. The percentage refers to the amount of data mapped to the host genome respect to quality-filtered data. Note that this value can be very variable depending on the biological features of the sample (e.g., anal swabs contain more host DNA than faeces) and the employed reference genome (e.g., the chances for mapping to the genome are lower as the distance between) the study species and the employed reference genome differ).
+
+```{r hostGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+hostGB <- sum(sample_metadata$host_bases)/1000000000
+cat(hostGB) # 6.49 GB from host
+```
+
+**Amount of host data (% of the quality-filtered data):**
+
+```{r host%, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+hostdata <- round(host_bases / (total_bases-discarded_bases) * 100,2)
+cat(hostdata) # 2.01% of quality filtered data is from host
+```
+
+**Estimated prokaryotic data:** 
+The amount and proportion of data belonging to prokayotic genomes respect to the total metagenomic fraction, as estimated from singleM analysis. Note that this is an estimation that relies on the genome sizes of genomes available in reference databases. If a given taxon is not properly represented, genome size estimations can be less accurate.
+
+```{r prokaGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+prokaGB <- sum(sample_metadata$metagenomic_bases * sample_metadata$singlem_fraction)/1000000000
+cat(prokaGB) # 293.14 GB prokaryotic data
+```
+
+**Estimated prokaryotic data (% of the metagenomic data):** 
+
+```{r proka%, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+prokadata <- sum(sample_metadata$metagenomic_bases * sample_metadata$singlem_fraction)/1000000000
+cat(prokadata)
+```
+
+**Amount of metagenomic data (GB):**
+The amount of data mapped against the host genome. The percentage refers to the amount of data mapped to the host genome respect to quality-filtered data. Note that this value can be very variable depending on the biological features of the sample (e.g., anal swabs contain more host DNA than faeces) and the employed reference genome (e.g., the chances for mapping to the genome are lower as the distance between) the study species and the employed reference genome differ).
+
+```{r metaGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+metaGB <- sum(sample_metadata$metagenomic_bases)/1000000000
+cat(metaGB) # 316.85 GB metagenomic data
+```
+
+**Amount of metagenomic data (% of the quality-filtered data):**
+
+```{r meta%, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+metaperce <- round(metagenomic_bases / (total_bases-discarded_bases) * 100,2)
+cat(metaperce) # 97.99%  quality filtered data is metagenomic
+```
+
+**Total mapped sequencing depth (million reads):**
+The amount of reads (and nucleotide bases) that were mapped to the entire MAG catalogue. Note that the amount of bases is only an approximation estimated by multiplying the exact number of mapped reads by 250 bp.
+
+```{r totalreads, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+totalreads <- round(sequencing_depth_sum / 1000000,2)
+cat(totalreads) # 1860.26 million reads
+```
+
+**Total mapped sequencing depth (GB):**
+
+```{r mappedGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+mappedGB <- round(sequencing_depth_sum / 1000000000 * 143,2)
+cat(mappedGB) # 266.02 GB total sequencing depth
+```
+
+**Average mapped sequencing depth (million reads):** 
+This is the average number of reads (and nucleotide bases) mapped to each sample. Note that the amount of bases is only an approximation estimated by multiplying the exact number of mapped reads by 250 bp.
+```{r meanreads, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+meanreads <- round(sequencing_depth_mean / 1000000,2)
+cat(meanreads) # 32.07 million reads avg seq depth
+```
+
+**Average mapped sequencing depth (GB):** 
+```{r meanGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+meanGB <- round(sequencing_depth_mean / 1000000000 * 143,2)
+cat(meanGB) # 4.59 GB avg seq depth
+```
+
+## General MAG statistics
+
+**Number of MAGs without species-level annotation**
+```{r nonspe, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+nonspecies <- genome_metadata %>%
+    filter(species == "s__") %>%
+    nrow()
+cat(nonspecies)
+```
+
+**Percentage of MAGs without species-level annotation**
+```{r sp_percet, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+perct <- nonspecies*100/nmags
+cat(perct)
+```
+
+**Number of phyla**
+
+```{r phyla, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+genome_metadata %>%
+    select(phylum) %>%
+  unique() %>%
+  pull() %>%
+    length()
+```
+
+# Sequencing Assessment
+
+## DNA fractions
+
+```{r}
+sequence_fractions <- read_counts %>%
+  pivot_longer(-genome, names_to = "sample", values_to = "value") %>%
+  group_by(sample) %>%
+  summarise(mags = sum(value)) %>%
+    left_join(sample_metadata, by = join_by(sample == sample))  %>%
+    select(sample,mags,metagenomic_bases,host_bases,bases_lost_fastp_percent) %>%
+    mutate(mags_bases = mags*146) %>%
+    mutate(lowqual_bases = ((metagenomic_bases+host_bases)/(1-bases_lost_fastp_percent))-(metagenomic_bases+host_bases)) %>%
+    mutate(unmapped_bases = metagenomic_bases - mags_bases) %>%
+    mutate(unmapped_bases = ifelse(unmapped_bases < 0, 0, unmapped_bases)) %>%
+    select(sample,mags_bases,unmapped_bases,host_bases,lowqual_bases)
+
+mags_bases_mean <- sequence_fractions %>%
+    mutate(mags_bases = mags_bases / 1000000000) %>%
+    select(mags_bases) %>%
+    pull() %>%
+    mean()
+  sequence_fractions %>%
+    pivot_longer(!sample, names_to = "fraction", values_to = "value") %>%
+    mutate(value = value / 1000000000) %>%
+    mutate(fraction = factor(fraction, levels = c("lowqual_bases","host_bases","unmapped_bases","mags_bases"))) %>%
+    ggplot(., aes(x = sample, y = value, fill=fraction)) +
+        geom_bar(position="stack", stat = "identity") +
+            scale_fill_manual(values=c("#CCCCCC","#178a94","#ee8080","#d03161")) +
+        geom_hline(yintercept = mags_bases_mean, linetype = "dashed", color = "black") +
+        labs(x = "Samples", y = "Amount of data (GB)") +
+        theme_classic() +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size=6),legend.position = "bottom")
+```
+
+## Estimated vs. mapped prokaryotic fraction
+```{r est_pro, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+singlem_table <- sequence_fractions %>%
+    mutate(mags_proportion = round((mags_bases / (mags_bases + unmapped_bases))*100,2)) %>%
+    left_join(sample_metadata, by = join_by(sample == sample))  %>%
+    mutate(singlem_proportion = round(singlem_fraction*100,2)) %>%
+    select(sample,mags_proportion,singlem_proportion) %>%
+    mutate(mags_proportion = ifelse(singlem_proportion == 0, 0, mags_proportion)) %>% #convert zeros to NA
+    mutate(singlem_proportion = ifelse(singlem_proportion == 0, NA, singlem_proportion)) %>% #convert zeros to NA
+    mutate(singlem_proportion = ifelse(singlem_proportion < mags_proportion, NA, singlem_proportion)) %>% #if singlem is smaller, then NA, to simplify plot
+    mutate(singlem_proportion = ifelse(singlem_proportion > 100, 100, singlem_proportion)) #simplify
+```
+
+```{r singlem, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+singlem_table %>%
+    pivot_longer(!sample, names_to = "proportion", values_to = "value") %>%
+    mutate(proportion = factor(proportion, levels = c("mags_proportion","singlem_proportion"))) %>%
+    ggplot(., aes(x = value, y = sample, color=proportion)) +
+            geom_line(aes(group = sample), color = "#f8a538") +
+            geom_point() +
+            scale_color_manual(values=c("#52e1e8","#876b53")) +
+            theme_classic() +
+            labs(y = "Samples", x = "Prokaryotic fraction (%)") +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size=6),legend.position = "right")
+```
+
+### Additional sequencing needed
+
+```{r seq_needs, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+# Define the aimed GBs for host and mapped metagenomic data
+mags_bases_aim=2
+host_bases_aim=5
+
+sequence_fractions_required <- sequence_fractions %>%
+    mutate(mags_bases = round(mags_bases / 1000000000,2)) %>%
+    mutate(unmapped_bases = round(unmapped_bases / 1000000000,2)) %>%
+    mutate(host_bases = round(host_bases / 1000000000,2)) %>%
+    mutate(lowqual_bases = round(lowqual_bases / 1000000000,2)) %>%
+    mutate(total_bases = mags_bases+unmapped_bases+host_bases+lowqual_bases) %>%
+    mutate(mags_bases_fraction = mags_bases/total_bases) %>%
+    mutate(mags_bases_difference = mags_bases_aim - mags_bases) %>%
+    mutate(meta_required = round(mags_bases_difference / mags_bases_fraction,2)) %>%
+    mutate(meta_required = ifelse(meta_required < 0, 0, meta_required)) %>%
+    mutate(host_bases_fraction = host_bases/total_bases) %>%
+    mutate(host_bases_difference = host_bases_aim - host_bases) %>%
+    mutate(host_required = round(host_bases_difference / host_bases_fraction,2)) %>%
+    mutate(host_required = ifelse(host_required < 0, 0, host_required)) %>%
+    select(sample,mags_bases,unmapped_bases,host_bases,lowqual_bases,meta_required,host_required)
+```
+
+```{r seq_needs_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+sequence_fractions_required %>%
+    select(sample,meta_required,host_required) %>%
+    mutate(meta_required = ifelse(meta_required > 20, 21, meta_required)) %>%
+    mutate(host_required = ifelse(host_required > 20, 21, host_required)) %>%
+    pivot_longer(!sample, names_to = "requirement", values_to = "value") %>%
+    mutate(requirement = factor(requirement, levels = c("host_required","meta_required"))) %>%
+    ggplot(., aes(x = value, y = sample, fill=requirement, group=requirement)) +
+        geom_bar(position="stack", stat = "identity") +
+            scale_fill_manual(values=c("#178a94","#d03161")) +
+            facet_wrap(~requirement, scales="free_x") +
+            labs(x = "Amount of data (GB)", y = "Samples") +
+            geom_vline(xintercept = 20, linetype = "dashed", color = "black") +
+        theme_classic() +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size=6),legend.position = "bottom")
+```
+
+
+
