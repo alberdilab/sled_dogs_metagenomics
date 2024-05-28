@@ -56,6 +56,8 @@ functional <- genome_counts_filt %>%
   mutate(functional = if_else(is.nan(functional), 1, functional))
 ```
 
+
+## Mean and standard deviation
 ```{r merge_alpha_div, comment="", message=FALSE, warning=FALSE}
 # Merge all metrics
 alpha_div_meta <- richness %>%
@@ -85,41 +87,8 @@ functional_mean <- alpha_div_meta %>%
 cbind(richness_mean, neutral_mean[, 2:3], phylogenetic_mean[, 2:3], functional_mean[, 2:3])
 ```
 
-```{r alpha_div_boxplot, comment="", message=FALSE, warning=FALSE, fig.height=3, fig.width=10, fig.fullwidth=TRUE}
-alpha_div <- richness %>%
-  full_join(neutral, by = join_by(sample == sample)) %>%
-  full_join(phylogenetic, by = join_by(sample == sample)) %>%
-  full_join(functional, by = join_by(sample == sample))
-  
-alpha_div %>%
-  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
-  left_join(., sample_metadata, by = join_by(sample == sample)) %>%
-  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic","functional"))) %>%
-      ggplot(aes(y = value, x = region, group=region, color=region, fill=region)) +
-      geom_boxplot(width = 0.5, outlier.shape = NA) +
-      geom_jitter(width = 0.2, alpha=0.5) +
- stat_compare_means(label.x = 1.2, 
-                     label.y = 10,
-                    show.legend = FALSE) +
-      scale_color_manual(name="Region",
-          values=c("#e5bd5b", "#6b7398")) +
-      scale_fill_manual(name="Region",
-          values=c("#e5bd5b50", "#6b739850")) +
-      facet_wrap(. ~ metric, scales = "free", ncol=4) +
-      coord_cartesian(xlim = c(1, NA)) +
-      theme_classic() +
-      theme(
-        strip.background = element_blank(),
-        panel.grid.minor.x = element_line(size = .1, color = "grey"),
-        axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1),
-          strip.text.x = element_text(size = 12, colour = "black")
-      )
-```
-
-
-```{r alpha_div_plot1, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+## Diversity plots
+```{r alpha_div_plot1, comment="", message=FALSE, warning=FALSE}
 alpha_div_pivot <- richness %>%
   full_join(neutral,by=join_by(sample==sample)) %>%
   full_join(phylogenetic,by=join_by(sample==sample)) %>%
@@ -164,7 +133,7 @@ plot1 <- alpha_div %>%
     panel.grid.minor = element_blank(),
     axis.line = element_line(size = 0.5, linetype = "solid", colour = "black")) +
   guides(colour = guide_legend(override.aes = list(size = 6))) +
-  labs(x = "Region", y = "Richness")
+  labs(x = NULL, y = "Richness")
 ```
 
 ```{r alpha_div_neutral, comment="", echo=FALSE, message=FALSE, warning=FALSE}
@@ -191,7 +160,7 @@ plot2 <- alpha_div %>%
     panel.grid.minor = element_blank(),
     axis.line = element_line(size = 0.5, linetype = "solid", colour = "black")) +
   guides(colour = guide_legend(override.aes = list(size = 6))) +
-  labs(x = "Region", y = "Neutral")
+  labs(x = NULL, y = "Neutral")
 ```
 
 ```{r alpha_div_phylo, comment="", echo=FALSE, message=FALSE, warning=FALSE}
@@ -218,7 +187,7 @@ plot3 <- alpha_div %>%
     panel.grid.minor = element_blank(),
     axis.line = element_line(size = 0.5, linetype = "solid", colour = "black")) +
   guides(colour = guide_legend(override.aes = list(size = 6)))+
-  labs(x = "Region", y = "Phylogenetic")
+  labs(x = NULL, y = "Phylogenetic")
 ```
 ```{r alpha_div_func, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 plot4 <- alpha_div %>%
@@ -245,7 +214,7 @@ plot4 <- alpha_div %>%
     panel.grid.minor = element_blank(),
     axis.line = element_line(size = 0.5, linetype = "solid", colour = "black")) +
   guides(colour = guide_legend(override.aes = list(size = 6)))+
-  labs(x = "Region", y = "Functional")
+  labs(x = NULL, y = "Functional")
 ```
 
 ```{r div_plot_together, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}

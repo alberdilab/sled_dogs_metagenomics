@@ -1,3 +1,6 @@
+# Data pre-processing
+
+## General data statistics
 
 ```{r loaddata, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 load("data/data.Rdata")
@@ -18,10 +21,6 @@ sequencing_depth_sum <- sum(sequencing_depth)
 sequencing_depth_mean <- mean(sequencing_depth)
 sequencing_depth_sd <- sd(sequencing_depth)
 ```
-
-# Data pre-processing
-
-## General data statistics
 
 **Number of samples**
 ```{r nsamples, comment="", echo=FALSE, message=FALSE, warning=FALSE}
