@@ -24,10 +24,11 @@ sequencing_depth_sd <- sd(sequencing_depth)
 
 **Number of samples**
 ```{r nsamples, comment="", echo=FALSE, message=FALSE, warning=FALSE}
-ncol(read_counts_row) # 58 samples
+samples <- ncol(read_counts_row) # 58 samples
+cat(samples) 
 ```
 
-**Number of MAGs**
+**Number of MAGs:**
 The number of metagenome-assembled genomes (MAG) or draft bacterial genomes reconstructed from the metagenomic data.
 
 ```{r nmags, comment="", echo=FALSE, message=FALSE, warning=FALSE}
@@ -52,7 +53,7 @@ discardgb <- sum(round(((sample_metadata$metagenomic_bases+sample_metadata$host_
 cat(discardgb) # 10.37 GB discarded
 ```
 
-**Amount of discarded data (in % of the raw data):**
+**Amount of discarded data (in % of the raw data)**
 
 ```{r %discarded, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 discarddata <- round(discarded_bases / total_bases * 100,2) 
@@ -67,7 +68,7 @@ hostGB <- sum(sample_metadata$host_bases)/1000000000
 cat(hostGB) # 6.49 GB from host
 ```
 
-**Amount of host data (% of the quality-filtered data):**
+**Amount of host data (% of the quality-filtered data)**
 
 ```{r host%, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 hostdata <- round(host_bases / (total_bases-discarded_bases) * 100,2)
@@ -112,7 +113,7 @@ totalreads <- round(sequencing_depth_sum / 1000000,2)
 cat(totalreads) # 1860.26 million reads
 ```
 
-**Total mapped sequencing depth (GB):**
+**Total mapped sequencing depth (GB)**
 
 ```{r mappedGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 mappedGB <- round(sequencing_depth_sum / 1000000000 * 143,2)
@@ -121,12 +122,13 @@ cat(mappedGB) # 266.02 GB total sequencing depth
 
 **Average mapped sequencing depth (million reads):** 
 This is the average number of reads (and nucleotide bases) mapped to each sample. Note that the amount of bases is only an approximation estimated by multiplying the exact number of mapped reads by 250 bp.
+
 ```{r meanreads, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 meanreads <- round(sequencing_depth_mean / 1000000,2)
 cat(meanreads) # 32.07 million reads avg seq depth
 ```
 
-**Average mapped sequencing depth (GB):** 
+**Average mapped sequencing depth (GB)** 
 ```{r meanGB, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 meanGB <- round(sequencing_depth_mean / 1000000000 * 143,2)
 cat(meanGB) # 4.59 GB avg seq depth
@@ -151,18 +153,19 @@ cat(perct)
 **Number of phyla**
 
 ```{r phyla, comment="", echo=FALSE, message=FALSE, warning=FALSE}
-genome_metadata %>%
+nphyla <- genome_metadata %>%
     select(phylum) %>%
   unique() %>%
   pull() %>%
     length()
+cat(nphyla)
 ```
 
 # Sequencing Assessment
 
 ## DNA fractions
 
-```{r}
+```{r DNA_fact, comment="", message=FALSE, warning=FALSE}
 sequence_fractions <- read_counts %>%
   pivot_longer(-genome, names_to = "sample", values_to = "value") %>%
   group_by(sample) %>%
@@ -194,7 +197,7 @@ mags_bases_mean <- sequence_fractions %>%
 ```
 
 ## Estimated vs. mapped prokaryotic fraction
-```{r est_pro, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r est_pro, comment="", message=FALSE, warning=FALSE}
 singlem_table <- sequence_fractions %>%
     mutate(mags_proportion = round((mags_bases / (mags_bases + unmapped_bases))*100,2)) %>%
     left_join(sample_metadata, by = join_by(sample == sample))  %>%
@@ -221,7 +224,7 @@ singlem_table %>%
 
 ### Additional sequencing needed
 
-```{r seq_needs, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r seq_needs, comment="",message=FALSE, warning=FALSE}
 # Define the aimed GBs for host and mapped metagenomic data
 mags_bases_aim=2
 host_bases_aim=5
@@ -243,7 +246,7 @@ sequence_fractions_required <- sequence_fractions %>%
     select(sample,mags_bases,unmapped_bases,host_bases,lowqual_bases,meta_required,host_required)
 ```
 
-```{r seq_needs_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+```{r seq_needs_plot, comment="",message=FALSE, warning=FALSE}
 sequence_fractions_required %>%
     select(sample,meta_required,host_required) %>%
     mutate(meta_required = ifelse(meta_required > 20, 21, meta_required)) %>%

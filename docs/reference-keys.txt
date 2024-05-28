@@ -38,8 +38,15 @@ taxonomy-boxplot
 family
 genus
 alpha-diversity
+mean-and-standard-deviation
+diversity-plots
 beta-diversity
 permanova
 richness-diversity-plot
 neutral-diversity-plot
 phylogenetic-diversity-plot
+functional-diversity-plot
+differential-abundance
+structural-zeros
+ancombc2-considering-structural-zeros-mag-level
+ancombc2-considering-structural-zeros-genus-level

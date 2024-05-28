@@ -2091,13 +2091,24 @@ color: #a52929;
 <li class="chapter" data-level="6.2.2" data-path="community-composition.html"><a href="community-composition.html#genus"><i class="fa fa-check"></i><b>6.2.2</b> Genus</a></li>
 </ul></li>
 </ul></li>
-<li class="chapter" data-level="7" data-path="alpha-diversity.html"><a href="alpha-diversity.html"><i class="fa fa-check"></i><b>7</b> Alpha diversity</a></li>
+<li class="chapter" data-level="7" data-path="alpha-diversity.html"><a href="alpha-diversity.html"><i class="fa fa-check"></i><b>7</b> Alpha diversity</a>
+<ul>
+<li class="chapter" data-level="7.1" data-path="alpha-diversity.html"><a href="alpha-diversity.html#mean-and-standard-deviation"><i class="fa fa-check"></i><b>7.1</b> Mean and standard deviation</a></li>
+<li class="chapter" data-level="7.2" data-path="alpha-diversity.html"><a href="alpha-diversity.html#diversity-plots"><i class="fa fa-check"></i><b>7.2</b> Diversity plots</a></li>
+</ul></li>
 <li class="chapter" data-level="8" data-path="beta-diversity.html"><a href="beta-diversity.html"><i class="fa fa-check"></i><b>8</b> Beta diversity</a>
 <ul>
 <li class="chapter" data-level="8.0.1" data-path="beta-diversity.html"><a href="beta-diversity.html#permanova"><i class="fa fa-check"></i><b>8.0.1</b> Permanova</a></li>
 <li class="chapter" data-level="8.0.2" data-path="beta-diversity.html"><a href="beta-diversity.html#richness-diversity-plot"><i class="fa fa-check"></i><b>8.0.2</b> Richness diversity plot</a></li>
 <li class="chapter" data-level="8.0.3" data-path="beta-diversity.html"><a href="beta-diversity.html#neutral-diversity-plot"><i class="fa fa-check"></i><b>8.0.3</b> Neutral diversity plot</a></li>
 <li class="chapter" data-level="8.0.4" data-path="beta-diversity.html"><a href="beta-diversity.html#phylogenetic-diversity-plot"><i class="fa fa-check"></i><b>8.0.4</b> Phylogenetic diversity plot</a></li>
+<li class="chapter" data-level="8.0.5" data-path="beta-diversity.html"><a href="beta-diversity.html#functional-diversity-plot"><i class="fa fa-check"></i><b>8.0.5</b> Functional diversity plot</a></li>
+</ul></li>
+<li class="chapter" data-level="9" data-path="differential-abundance.html"><a href="differential-abundance.html"><i class="fa fa-check"></i><b>9</b> Differential abundance</a>
+<ul>
+<li class="chapter" data-level="9.1" data-path="differential-abundance.html"><a href="differential-abundance.html#structural-zeros"><i class="fa fa-check"></i><b>9.1</b> Structural zeros</a></li>
+<li class="chapter" data-level="9.2" data-path="differential-abundance.html"><a href="differential-abundance.html#ancombc2-considering-structural-zeros-mag-level"><i class="fa fa-check"></i><b>9.2</b> Ancombc2 (considering structural zeros): Mag level</a></li>
+<li class="chapter" data-level="9.3" data-path="differential-abundance.html"><a href="differential-abundance.html#ancombc2-considering-structural-zeros-genus-level"><i class="fa fa-check"></i><b>9.3</b> Ancombc2 (considering structural zeros): Genus level</a></li>
 </ul></li>
 <li class="divider"></li>
 <li><a href="https://www.alberdilab.dk" target="blank"><b>www.alberdilab.dk</b></a></li>
@@ -2126,8 +2137,8 @@ color: #a52929;
 <div id="general-data-statistics" class="section level2 hasAnchor" number="3.1">
 <h2><span class="header-section-number">3.1</span> General data statistics<a href="data-pre-processing.html#general-data-statistics" class="anchor-section" aria-label="Anchor link to header"></a></h2>
 <p><strong>Number of samples</strong></p>
-<pre class="script-output"><code>[1] 58</code></pre>
-<p><strong>Number of MAGs</strong>
+<pre class="script-output"><code>58</code></pre>
+<p><strong>Number of MAGs:</strong>
 The number of metagenome-assembled genomes (MAG) or draft bacterial genomes reconstructed from the metagenomic data.</p>
 <pre class="script-output"><code>555</code></pre>
 <p><strong>Amount of total data (GB):</strong>
@@ -2136,12 +2147,12 @@ The amount of total DNA data sequenced in gigabases (GB, one billion nucleotide 
 <p><strong>Amount of discarded data (GB):</strong>
 The amount of data discarded due to low quality or lack of informativeness during data preprocesing. Discarding 5-15% of the produced data is within the expected range, due to formation of adaptor dimers, inclusion of adaptors in sequencing reads due to short insert sizes, low sequencing quality, etc.</p>
 <pre class="script-output"><code>10.36577</code></pre>
-<p><strong>Amount of discarded data (in % of the raw data):</strong></p>
+<p><strong>Amount of discarded data (in % of the raw data)</strong></p>
 <pre class="script-output"><code>3.11</code></pre>
 <p><strong>Amount of host data (GB):</strong>
 The amount of data mapped against the host genome. The percentage refers to the amount of data mapped to the host genome respect to quality-filtered data. Note that this value can be very variable depending on the biological features of the sample (e.g., anal swabs contain more host DNA than faeces) and the employed reference genome (e.g., the chances for mapping to the genome are lower as the distance between) the study species and the employed reference genome differ).</p>
 <pre class="script-output"><code>6.488333</code></pre>
-<p><strong>Amount of host data (% of the quality-filtered data):</strong></p>
+<p><strong>Amount of host data (% of the quality-filtered data)</strong></p>
 <pre class="script-output"><code>2.01</code></pre>
 <p><strong>Estimated prokaryotic data:</strong>
 The amount and proportion of data belonging to prokayotic genomes respect to the total metagenomic fraction, as estimated from singleM analysis. Note that this is an estimation that relies on the genome sizes of genomes available in reference databases. If a given taxon is not properly represented, genome size estimations can be less accurate.</p>
@@ -2156,12 +2167,12 @@ The amount of data mapped against the host genome. The percentage refers to the 
 <p><strong>Total mapped sequencing depth (million reads):</strong>
 The amount of reads (and nucleotide bases) that were mapped to the entire MAG catalogue. Note that the amount of bases is only an approximation estimated by multiplying the exact number of mapped reads by 250 bp.</p>
 <pre class="script-output"><code>1860.26</code></pre>
-<p><strong>Total mapped sequencing depth (GB):</strong></p>
+<p><strong>Total mapped sequencing depth (GB)</strong></p>
 <pre class="script-output"><code>266.02</code></pre>
 <p><strong>Average mapped sequencing depth (million reads):</strong>
 This is the average number of reads (and nucleotide bases) mapped to each sample. Note that the amount of bases is only an approximation estimated by multiplying the exact number of mapped reads by 250 bp.</p>
 <pre class="script-output"><code>32.07</code></pre>
-<p><strong>Average mapped sequencing depth (GB):</strong></p>
+<p><strong>Average mapped sequencing depth (GB)</strong></p>
 <pre class="script-output"><code>4.59</code></pre>
 </div>
 <div id="general-mag-statistics" class="section level2 hasAnchor" number="3.2">
@@ -2171,7 +2182,7 @@ This is the average number of reads (and nucleotide bases) mapped to each sample
 <p><strong>Percentage of MAGs without species-level annotation</strong></p>
 <pre class="script-output"><code>43.96396</code></pre>
 <p><strong>Number of phyla</strong></p>
-<pre class="script-output"><code>[1] 12</code></pre>
+<pre class="script-output"><code>12</code></pre>
 </div>
 </div>
             </section>
