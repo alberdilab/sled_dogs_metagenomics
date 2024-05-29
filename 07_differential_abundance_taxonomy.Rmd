@@ -1,6 +1,6 @@
 # Differential abundance analysis: taxonomic
 
-```{r load_data_tax}
+```{r load_data_tax, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 load("data/data.Rdata")
 ```
 
@@ -110,7 +110,7 @@ ancom_rand_output = ancombc2(data = physeq_genome_filtered,
                   mdfdr_control = list(fwer_ctrl_method = "holm", B = 100), 
                   trend_control = NULL)
 ```
-```{r ancom_rand_res, comment="", message=FALSE, warning=FALSE}
+```{r ancom_rand_res, comment="", echo=FALSE,message=FALSE, warning=FALSE}
 taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(phylum, genus), ~ str_replace(., "[dpcofgs]__", ""))
@@ -172,7 +172,7 @@ ancom_result %>%
 
 ## Ancombc2 (considering structural zeros): Genus level
 
-```{r name_gen, comment="", message=FALSE, warning=FALSE}
+```{r name_gen, comment="", echo=FALSE,message=FALSE, warning=FALSE}
 physeq_genome_filtered_test<- physeq_genome_filtered
 tax <- data.frame(tax_table(physeq_genome_filtered_test))
 
@@ -218,7 +218,7 @@ tax_table(physeq_genome_filtered_test) <- as.matrix(tax.clean)
 
 ```
 
-```{r ancom_rand_gen, comment="", message=FALSE, warning=FALSE}
+```{r ancom_rand_gen, comment="", echo=FALSE,message=FALSE, warning=FALSE}
 ancom_rand_output_gen = ancombc2(data = physeq_genome_filtered_test, 
                   assay_name = "counts",
                   tax_level = "genus", #change to agglomerate analysis to a higher taxonomic range
@@ -244,7 +244,7 @@ ancom_rand_output_gen = ancombc2(data = physeq_genome_filtered_test,
                   trend_control = NULL)
 ```
 
-```{r ancom_rand_res_gen, comment="", message=FALSE, warning=FALSE}
+```{r ancom_rand_res_gen, comment="", echo=FALSE,message=FALSE, warning=FALSE}
 taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   rownames_to_column(., "taxon") %>%
   mutate_at(vars(phylum, genus), ~ str_replace(., "[dpcofgs]__", ""))%>%
@@ -276,7 +276,7 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 	pull()
 ```
 
-```{r ancombc_rand_plot_gen, comment="", message=FALSE, warning=FALSE}
+```{r ancombc_rand_plot_gen, comment="", echo=FALSE,message=FALSE, warning=FALSE}
 ancombc_rand_table_gen%>%
       mutate(taxon=factor(taxon,levels=ancombc_rand_table_gen$taxon)) %>%
 mutate(Color = ifelse(lfc_regionIttoqqortoormii <0, "Daneborg","Ittoqqortoormii")) %>%

@@ -55,6 +55,6 @@ wilcoxon
 community-elements-differences
 community-functions-differences
 community-domains-differences
-ancombc2
+ancom-bc2
 element-level
 functional-level
