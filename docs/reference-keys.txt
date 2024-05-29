@@ -46,7 +46,15 @@ richness-diversity-plot
 neutral-diversity-plot
 phylogenetic-diversity-plot
 functional-diversity-plot
-differential-abundance
+differential-abundance-analysis-taxonomic
 structural-zeros
 ancombc2-considering-structural-zeros-mag-level
 ancombc2-considering-structural-zeros-genus-level
+differential-abundance-analysis-functional
+wilcoxon
+community-elements-differences
+community-functions-differences
+community-domains-differences
+ancombc2
+element-level
+functional-level
