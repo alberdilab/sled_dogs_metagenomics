@@ -38,7 +38,7 @@ beta_q1f <- genome_counts_filt %>%
   hillpair(., q = 1, dist = dist)
 ```
 
-### Permanova
+## Permanova
 
 ```{r permanova, comment="", message=FALSE, warning=FALSE}
 #Richness
@@ -74,8 +74,8 @@ adonis2(beta_q1f$S ~ region,
         tt()
 ```
 
-### Richness diversity plot
-
+## Plot
+### Richness diversity
 ```{r beta_div_nmds_richness_plot, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
 beta_q0n$S %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
@@ -109,7 +109,7 @@ beta_q0n$S %>%
 ```
 
 
-### Neutral diversity plot
+### Neutral diversity
 
 ```{r beta_div_nmds_neutral_plot, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
 beta_q1n$S %>%
@@ -142,7 +142,7 @@ beta_q1n$S %>%
     )
 ```
 
-### Phylogenetic diversity plot
+### Phylogenetic diversity 
 
 ```{r beta_div_nmds_phylo_plot, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
 beta_q1p$S %>%
@@ -175,7 +175,7 @@ beta_q1p$S %>%
     )
 ```
 
-### Functional diversity plot
+### Functional diversity 
 
 ```{r beta_div_nmds_func_plot, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
 beta_q1f$S %>%

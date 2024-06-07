@@ -42,10 +42,11 @@ mean-and-standard-deviation
 diversity-plots
 beta-diversity
 permanova
-richness-diversity-plot
-neutral-diversity-plot
-phylogenetic-diversity-plot
-functional-diversity-plot
+plot
+richness-diversity
+neutral-diversity
+phylogenetic-diversity
+functional-diversity
 differential-abundance-analysis-taxonomic
 structural-zeros
 ancombc2-considering-structural-zeros-mag-level

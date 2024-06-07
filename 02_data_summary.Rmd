@@ -183,17 +183,19 @@ mags_bases_mean <- sequence_fractions %>%
     select(mags_bases) %>%
     pull() %>%
     mean()
-  sequence_fractions %>%
-    pivot_longer(!sample, names_to = "fraction", values_to = "value") %>%
-    mutate(value = value / 1000000000) %>%
-    mutate(fraction = factor(fraction, levels = c("lowqual_bases","host_bases","unmapped_bases","mags_bases"))) %>%
-    ggplot(., aes(x = sample, y = value, fill=fraction)) +
-        geom_bar(position="stack", stat = "identity") +
-            scale_fill_manual(values=c("#CCCCCC","#178a94","#ee8080","#d03161")) +
-        geom_hline(yintercept = mags_bases_mean, linetype = "dashed", color = "black") +
-        labs(x = "Samples", y = "Amount of data (GB)") +
-        theme_classic() +
-        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size=6),legend.position = "bottom")
+sequence_fractions %>%
+  pivot_longer(!sample, names_to = "fraction", values_to = "value") %>%
+  mutate(value = value / 1000000000) %>%
+  mutate(fraction = factor(fraction, levels = c("lowqual_bases","host_bases","unmapped_bases","mags_bases"))) %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(., aes(x = sample, y = value, fill=fraction)) +
+  geom_bar(position="stack", stat = "identity") +
+  scale_fill_manual(values=c("#CCCCCC","#178a94","#ee8080","#d03161")) +
+  facet_wrap(~region, scales="free_x")+
+  geom_hline(yintercept = mags_bases_mean, linetype = "dashed", color = "black") +
+  labs(x = "Samples", y = "Amount of data (GB)") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size=6),legend.position = "bottom")
 ```
 
 ## Estimated vs. mapped prokaryotic fraction
@@ -211,15 +213,17 @@ singlem_table <- sequence_fractions %>%
 
 ```{r singlem, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 singlem_table %>%
-    pivot_longer(!sample, names_to = "proportion", values_to = "value") %>%
-    mutate(proportion = factor(proportion, levels = c("mags_proportion","singlem_proportion"))) %>%
-    ggplot(., aes(x = value, y = sample, color=proportion)) +
-            geom_line(aes(group = sample), color = "#f8a538") +
-            geom_point() +
-            scale_color_manual(values=c("#52e1e8","#876b53")) +
-            theme_classic() +
-            labs(y = "Samples", x = "Prokaryotic fraction (%)") +
-        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size=6),legend.position = "right")
+  pivot_longer(!sample, names_to = "proportion", values_to = "value") %>%
+  mutate(proportion = factor(proportion, levels = c("mags_proportion","singlem_proportion"))) %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(., aes(x = value, y = sample, color=proportion)) +
+  geom_line(aes(group = sample), color = "#f8a538") +
+  geom_point() +
+  facet_wrap(~region, scales="free_y")+
+  scale_color_manual(values=c("#52e1e8","#876b53")) +
+  theme_classic() +
+  labs(y = "Samples", x = "Prokaryotic fraction (%)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size=6),legend.position = "right")
 ```
 
 ### Additional sequencing needed

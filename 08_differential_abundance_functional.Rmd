@@ -180,7 +180,7 @@ element_gift_names <- element_gift_filt%>%
   left_join(., sample_metadata[c(1,4)], by = join_by(sample == sample))
 
 
-colNames <- names(element_gift_names)[2:61]
+colNames <- names(element_gift_names)[2:74]
 for(i in colNames){
   plt <- ggplot(element_gift_names, aes(x=region, y=.data[[i]], color = region, fill=region)) +
     geom_boxplot(alpha = 0.2, outlier.shape = NA, width = 0.3, show.legend = FALSE) +
@@ -269,7 +269,7 @@ function_gift_names <- function_gift_filt%>%
   left_join(., sample_metadata[c(1,4)], by = join_by(sample == sample))
 
 
-colNames <- names(function_gift_names)[2:6]
+colNames <- names(function_gift_names)[2:10]
 for(i in colNames){
   plt <- ggplot(function_gift_names, aes(x=region, y=.data[[i]], color = region, fill=region)) +
     geom_boxplot(alpha = 0.2, outlier.shape = NA, width = 0.3, show.legend = FALSE) +

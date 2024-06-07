@@ -66,6 +66,10 @@ alpha_div_meta <- richness %>%
   full_join(functional, by = join_by(sample == sample)) %>% 
   left_join(., sample_metadata, by = join_by(sample == sample))
 
+alpha_div <- richness %>%
+  full_join(neutral, by = join_by(sample == sample)) %>%
+  full_join(phylogenetic, by = join_by(sample == sample)) %>%
+  full_join(functional, by = join_by(sample == sample))
 
 #By region
 richness_mean <- alpha_div_meta %>%
