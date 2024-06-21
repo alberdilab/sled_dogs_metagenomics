@@ -24,10 +24,16 @@ neutral <- genome_counts_filt %>%
   dplyr::rename(neutral = 1) %>%
   rownames_to_column(var = "sample")
 
+#remove MAGs not present in the filtered table from the tree
+count_table_names <- genome_counts_filt$genome
+tree_tip_labels <- genome_tree$tip.label
+missing_in_table <- setdiff(tree_tip_labels, count_table_names)
+genome_tree_pruned <- tidytree::drop.tip(genome_tree, missing_in_table)
+
 phylogenetic <- genome_counts_filt %>%
   column_to_rownames(var = "genome") %>%
   dplyr::select(where(~ !all(. == 0))) %>%
-  hilldiv(., q = 1, tree = genome_tree) %>%
+  hilldiv(., q = 1, tree = genome_tree_pruned) %>%
   t() %>%
   as.data.frame() %>%
   dplyr::rename(phylogenetic = 1) %>%

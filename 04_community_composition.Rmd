@@ -87,9 +87,9 @@ summary.phylum.Daneborg%>%
   tt()
 ```
 
-Ittoqqortoormii dogs
+Ittoqqortoormiit dogs
 ```{r phylum_itto, comment="", echo=FALSE}
-physeq_itto <- subset_samples(physeq_genome, region == "Ittoqqortoormii")
+physeq_itto <- subset_samples(physeq_genome, region == "Ittoqqortoormiit")
 physeq_itto <- prune_taxa(taxa_sums(physeq_itto)>0, physeq_itto)
 physeq_itto.phylum <- microbiome::aggregate_taxa(physeq_itto, 'phylum')
 physeq_itto.phylum.rel <-  microbiome::transform(physeq_itto.phylum, "compositional")

@@ -7,7 +7,7 @@ load("data/data.Rdata")
 ## Structural zeros
 ```{r zero, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 Ittoq_samples <- sample_metadata %>% 
-                    filter(region == "Ittoqqortoormii") %>% 
+                    filter(region == "Ittoqqortoormiit") %>% 
                     dplyr::select(sample) %>% pull()
 
 daneb_samples <- sample_metadata %>% 
@@ -116,9 +116,9 @@ taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
   mutate_at(vars(phylum, genus), ~ str_replace(., "[dpcofgs]__", ""))
 
 ancombc_rand_table <- ancom_rand_output$res %>%
-  dplyr::select(taxon, lfc_regionIttoqqortoormii, p_regionIttoqqortoormii) %>%
-  filter(p_regionIttoqqortoormii < 0.05) %>%
-  dplyr::arrange(p_regionIttoqqortoormii) %>%
+  dplyr::select(taxon, lfc_regionIttoqqortoormiit, p_regionIttoqqortoormiit) %>%
+  filter(p_regionIttoqqortoormiit < 0.05) %>%
+  dplyr::arrange(p_regionIttoqqortoormiit) %>%
   merge(., taxonomy, by="taxon")
 
 colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
@@ -138,7 +138,7 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 ```
 
 ```{r ancombc_rand_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
-ggplot(ancombc_rand_table, aes(x=forcats::fct_rev(genus), y=lfc_regionIttoqqortoormii, color=phylum)) + 
+ggplot(ancombc_rand_table, aes(x=forcats::fct_rev(genus), y=lfc_regionIttoqqortoormiit, color=phylum)) + 
   geom_point(size=4) + 
   scale_color_manual(values=tax_color) + 
   geom_hline(yintercept=0) + 
@@ -160,11 +160,11 @@ ancom_result <- ancom_rand_output$res %>%
   dplyr::rename(genome=taxon) %>%
   left_join(genome_metadata,by=join_by(genome==genome))
 ancom_result %>%
-    mutate(significance = ifelse(p_regionIttoqqortoormii < 0.05, "1", "0")) %>%
-    ggplot(., aes(x=-log(p_regionIttoqqortoormii), y=lfc_regionIttoqqortoormii, color=significance)) +
+    mutate(significance = ifelse(p_regionIttoqqortoormiit < 0.05, "1", "0")) %>%
+    ggplot(., aes(x=-log(p_regionIttoqqortoormiit), y=lfc_regionIttoqqortoormiit, color=significance)) +
       geom_point() +
       scale_color_manual(values = c("#cccccc","#00FFFF")) +
-      geom_text(aes(3, 5), label = "Enriched\nin Ittoqqortoormii", color="#666666") +
+      geom_text(aes(3, 5), label = "Enriched\nin Ittoqqortoormiit", color="#666666") +
       geom_text(aes(3, -5), label = "Enriched\nin Danenborg", color="#666666") +
       labs(color="Significance", y="Difference between locations", x="p-value") +
       theme_classic()
@@ -253,11 +253,11 @@ taxonomy <- data.frame(physeq_genome_filtered@tax_table) %>%
 
 ancombc_rand_table_gen <- ancom_rand_output_gen$res %>%
   mutate_at(vars(taxon), ~ str_replace(., "[dpcofgs]__", ""))%>%
-  dplyr::select(taxon, lfc_regionIttoqqortoormii, p_regionIttoqqortoormii) %>%
-  filter(p_regionIttoqqortoormii < 0.05) %>%
-  dplyr::arrange(lfc_regionIttoqqortoormii)  %>%
+  dplyr::select(taxon, lfc_regionIttoqqortoormiit, p_regionIttoqqortoormiit) %>%
+  filter(p_regionIttoqqortoormiit < 0.05) %>%
+  dplyr::arrange(lfc_regionIttoqqortoormiit)  %>%
   left_join(taxonomy, by=join_by(taxon == genus)) %>%
-  dplyr::arrange(lfc_regionIttoqqortoormii)
+  dplyr::arrange(lfc_regionIttoqqortoormiit)
 
 colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
   mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
@@ -279,8 +279,8 @@ tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
 ```{r ancombc_rand_plot_gen, comment="", echo=FALSE,message=FALSE, warning=FALSE}
 ancombc_rand_table_gen%>%
       mutate(taxon=factor(taxon,levels=ancombc_rand_table_gen$taxon)) %>%
-mutate(Color = ifelse(lfc_regionIttoqqortoormii <0, "Daneborg","Ittoqqortoormii")) %>%
-ggplot(., aes(x=lfc_regionIttoqqortoormii, y=forcats::fct_rev(taxon), fill=Color)) + #forcats::fct_rev()
+mutate(Color = ifelse(lfc_regionIttoqqortoormiit <0, "Daneborg","Ittoqqortoormiit")) %>%
+ggplot(., aes(x=lfc_regionIttoqqortoormiit, y=forcats::fct_rev(taxon), fill=Color)) + #forcats::fct_rev()
   geom_col() + 
   scale_fill_manual(values=tax_color) + 
   geom_hline(yintercept=0) + 
@@ -305,11 +305,11 @@ ancom_result_gen <- ancom_rand_output_gen$res %>%
   dplyr::rename(genome=taxon) %>%
   left_join(genome_metadata,by=join_by(genome==genome))
 ancom_result_gen %>%
-    mutate(significance = ifelse(p_regionIttoqqortoormii < 0.05, "1", "0")) %>%
-    ggplot(., aes(x=-log(p_regionIttoqqortoormii), y=lfc_regionIttoqqortoormii, color=significance)) +
+    mutate(significance = ifelse(p_regionIttoqqortoormiit < 0.05, "1", "0")) %>%
+    ggplot(., aes(x=-log(p_regionIttoqqortoormiit), y=lfc_regionIttoqqortoormiit, color=significance)) +
       geom_point() +
       scale_color_manual(values = c("#cccccc","#00FFFF")) +
-      geom_text(aes(3, 5), label = "Enriched\nin Ittoqqortoormii", color="#666666") +
+      geom_text(aes(3, 5), label = "Enriched\nin Ittoqqortoormiit", color="#666666") +
       geom_text(aes(3, -5), label = "Enriched\nin Danenborg", color="#666666") +
       labs(color="Significance", y="Difference between locations", x="p-value") +
       theme_classic()

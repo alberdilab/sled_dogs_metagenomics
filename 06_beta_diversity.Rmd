@@ -21,7 +21,7 @@ beta_q1p <- genome_counts_filt %>%
   column_to_rownames(., "genome") %>%
   filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
   select_if(~!all(. == 0)) %>%
-  hillpair(., q = 1, tree = genome_tree)
+  hillpair(., q = 1, tree = genome_tree_pruned)
 
 genome_counts_filt <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts),] 
 rownames(genome_counts_filt) <- NULL

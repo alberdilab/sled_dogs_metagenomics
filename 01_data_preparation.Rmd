@@ -9,6 +9,7 @@ Load the original data files outputted by the bioinformatic pipeline.
 ```{r load_sample_metadata, warning=FALSE, comments="", message=FALSE}
 sample_metadata <- read_tsv("data/DMB0032_metadata.tsv")%>%
 	dplyr::rename(sample=EHI_plaintext) 
+sample_metadata$region <- gsub("Ittoqqortoormii", "Ittoqqortoormiit", sample_metadata$region) # correct region names
 ```
 
 ### Read counts
@@ -71,7 +72,7 @@ read_counts_filt <- genome_coverage %>%
 
 ```{r calculate_genome_counts_unfiltered, warning=FALSE, comments="", message=FALSE}
 readlength=150
-genome_counts <- read_counts %>%
+genome_counts <- read_counts_filt %>% #u
   mutate(across(where(is.numeric), ~ . / (genome_metadata$length / readlength) ))
 ```
 
@@ -84,7 +85,7 @@ genome_counts_filt <- read_counts_filt %>%
 ### Distill annotations into GIFTs 
 
 ```{r distill_annotations, warning=FALSE, comments="", message=FALSE, eval=FALSE}
-genome_gifts <- distill(genome_annotations,GIFT_db,genomecol=2,annotcol=c(9,10,19), verbosity=F)
+genome_gifts <- distill(genome_annotations,GIFT_db,genomecol=2,annotcol=c(9,10,19))
 genome_counts_filt <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts),] 
 rownames(genome_counts_filt) <- NULL
 genome_gifts <- genome_gifts[rownames(genome_gifts) %in% genome_counts_filt$genome,] 
