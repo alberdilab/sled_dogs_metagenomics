@@ -1,0 +1,661 @@
+# Virulence factor analysis
+
+```{r load_data_virulence}
+load("data/data.Rdata")
+virulence_summary <- read_tsv("data/virulence_summary_dogs.tsv") %>%
+    rename(genome=1)%>%
+    arrange(match(genome,genome_metadata$genome))%>% 
+  column_to_rownames(., "genome")
+```
+
+# V1 value
+
+```{r V1, comment="", message=FALSE, warning=FALSE}
+genome_counts_rel <- genome_counts %>%
+  mutate_at(vars(-genome),~./sum(.)) %>%
+  arrange(match(genome,genome_metadata$genome))%>% 
+  semi_join(., virulence_summary %>% rownames_to_column("genome"), by = "genome") %>% 
+  column_to_rownames(., "genome")
+
+result_V1 <- data.frame(matrix(ncol = ncol(genome_counts_rel), nrow = nrow(genome_counts_rel)))
+colnames(result_V1) <- colnames(genome_counts_rel)
+rownames(result_V1) <- rownames(genome_counts_rel)
+
+for (i in 1:nrow(virulence_summary)) {
+  result_V1[i, ] <- genome_counts_rel[i, ] * virulence_summary[i, 1]
+}
+```
+
+## Mean V1 values
+```{r V1_mean, comment="", message=FALSE, warning=FALSE}
+result_V1 %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(V1=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  group_by(region) %>%
+  summarise(average=mean(V1))
+```
+
+## Plots
+```{r V1_plot2, comment="", message=FALSE, warning=FALSE}
+result_V1 %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(V1=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(aes(y = V1, x = region, group=region, color=region, fill=region)) +
+  geom_boxplot(outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Region",
+          values=c("#e5bd5b", "#6b7398")) +
+      scale_fill_manual(name="Region",
+          values=c("#e5bd5b50", "#6b739850")) +
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    axis.ticks.x = element_blank(),
+        strip.text.x = element_text(size = 12, color="black",face="bold"),
+        strip.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .1, color = "grey"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        legend.text=element_text(size=10),
+        legend.title = element_text(size=12))+
+    guides(fill = guide_legend(override.aes = list(size=3)))
+```
+
+### Mixed models 
+```{r V1_values, comment="", message=FALSE, warning=FALSE}
+V1_values <- result_V1 %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(V1=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))
+```
+
+```{r model_v1_lm, comment="", message=FALSE, warning=FALSE}
+Modelq1_V1<- lm(formula = V1 ~ region, data = V1_values) 
+anova(Modelq1_V1)
+r.squaredGLMM(Modelq1_V1)
+```
+
+# V1 + V2 value
+
+```{r V1_2, comment="", message=FALSE, warning=FALSE}
+# virulence_summary <- virulence_summary %>% 
+#   mutate(sumrow= V1 + V2) %>% 
+#   rename(V1_2=sumrow)%>% 
+#   arrange(desc(V1_2))
+
+result_V1_2 <- data.frame(matrix(ncol = ncol(genome_counts_rel), nrow = nrow(genome_counts_rel)))
+colnames(result_V1_2) <- colnames(genome_counts_rel)
+rownames(result_V1_2) <- rownames(genome_counts_rel)
+
+for (i in 1:nrow(virulence_summary)) {
+  result_V1_2[i, ] <- genome_counts_rel[i, ] * virulence_summary[i, 8]
+}
+```
+
+## Mean V12 values
+```{r V1_2_mean, comment="", message=FALSE, warning=FALSE}
+result_V1_2 %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(V1_2=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  group_by(region) %>%
+  summarise(average=mean(V1_2))
+```
+
+## Plots
+```{r V12_plot1, comment="", message=FALSE, warning=FALSE}
+result_V1_2 %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(V1_2=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(aes(y = V1_2, x = region, group=region, color=region, fill=region)) +
+  geom_boxplot(outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(alpha=0.5) +
+  scale_color_manual(name="Region",
+          values=c("#e5bd5b", "#6b7398")) +
+  scale_fill_manual(name="Region",
+          values=c("#e5bd5b50", "#6b739850")) +
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    axis.ticks.x = element_blank(),
+        strip.text.x = element_text(size = 12, color="black",face="bold"),
+        strip.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .1, color = "grey"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        legend.text=element_text(size=10),
+        legend.title = element_text(size=12))+
+    guides(fill = guide_legend(override.aes = list(size=3)))
+```
+
+### Mixed models 
+```{r v12_values, comment="", message=FALSE, warning=FALSE}
+V1_2_values <- result_V1_2 %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(V1_2=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))
+```
+
+```{r model_v12_lm, comment="", message=FALSE, warning=FALSE}
+Modelq1_nvi<- lm(formula = V1_2 ~ region, data = V1_2_values) 
+anova(Modelq1_nvi)
+```
+
+# AVI value
+
+```{r AVI, comment="", message=FALSE, warning=FALSE}
+result_AVI <- data.frame(matrix(ncol = ncol(genome_counts_rel), nrow = nrow(genome_counts_rel)))
+colnames(result_AVI) <- colnames(genome_counts_rel)
+rownames(result_AVI) <- rownames(genome_counts_rel)
+
+for (i in 1:nrow(virulence_summary)) {
+  result_AVI[i, ] <- genome_counts_rel[i, ] * virulence_summary[i, 6]
+}
+```
+
+## Mean AVI values
+```{r AVI_mean, comment="", message=FALSE, warning=FALSE}
+result_AVI %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(AVI=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  group_by(region) %>%
+  summarise(average=mean(AVI))
+```
+
+## Plots
+```{r AVI_plot1, comment="", message=FALSE, warning=FALSE}
+result_AVI %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(AVI=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(aes(y = AVI, x = region, group=region, color=region, fill=region)) +
+  geom_boxplot(outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Region",
+          values=c("#e5bd5b", "#6b7398")) +
+      scale_fill_manual(name="Region",
+          values=c("#e5bd5b50", "#6b739850"))+
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    axis.ticks.x = element_blank(),
+        strip.text.x = element_text(size = 12, color="black",face="bold"),
+        strip.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .1, color = "grey"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        legend.text=element_text(size=10),
+        legend.title = element_text(size=12))+
+    guides(fill = guide_legend(override.aes = list(size=3)))
+```
+
+
+### Mixed models 
+```{r AVI_values, comment="", message=FALSE, warning=FALSE}
+AVI_values <- result_AVI %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(AVI=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))
+```
+
+```{r model_lm_avi, comment="", message=FALSE, warning=FALSE}
+Modelq1_avi<- lm(formula = AVI ~ region, data = AVI_values) 
+anova(Modelq1_avi)
+r.squaredGLMM(Modelq1_avi)
+```
+
+
+# NVI value
+
+```{r NVI, comment="", message=FALSE, warning=FALSE}
+
+result_NVI <- data.frame(matrix(ncol = ncol(genome_counts_rel), nrow = nrow(genome_counts_rel)))
+colnames(result_NVI) <- colnames(genome_counts_rel)
+rownames(result_NVI) <- rownames(genome_counts_rel)
+
+for (i in 1:nrow(virulence_summary)) {
+  result_NVI[i, ] <- genome_counts_rel[i, ] * virulence_summary[i, 7]
+}
+```
+
+## Mean NVI values
+```{r NVI_mean, comment="", message=FALSE, warning=FALSE}
+result_NVI %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(NVI=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  group_by(region) %>%
+  summarise(average=mean(NVI))
+```
+
+## Plots
+```{r NVI_plot1, comment="", message=FALSE, warning=FALSE}
+result_NVI %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(NVI=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(aes(y = NVI, x = region, group=region, color=region, fill=region)) +
+  geom_boxplot(outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(alpha=0.5) +
+      scale_color_manual(name="Region",
+          values=c("#e5bd5b", "#6b7398")) +
+      scale_fill_manual(name="Region",
+          values=c("#e5bd5b50", "#6b739850")) +
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    axis.ticks.x = element_blank(),
+        strip.text.x = element_text(size = 12, color="black",face="bold"),
+        strip.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .1, color = "grey"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        legend.text=element_text(size=10),
+        legend.title = element_text(size=12))+
+    guides(fill = guide_legend(override.aes = list(size=3)))
+```
+
+### Mixed models 
+```{r NVI_values, comment="", message=FALSE, warning=FALSE}
+NVI_values <- result_NVI %>%
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(NVI=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))
+```
+
+```{r model_NVI_lm, comment="", message=FALSE, warning=FALSE}
+Modelq1_nvi<- lm(formula = NVI ~ region, data = NVI_values) 
+anova(Modelq1_nvi)
+r.squaredGLMM(Modelq1_nvi)
+```
+
+
+
+
+
+
+# Some other analysis
+
+```{r}
+virulence_summary %>% 
+  colMeans()
+```
+
+## Clostridium virulence
+
+```{r}
+virulence_summary %>% 
+  rownames_to_column(., "genome") %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
+  filter(class=="c__Clostridia") %>% 
+  column_to_rownames(., "genome") %>% 
+  summarise(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+```
+```{r}
+virulence_summary %>% 
+  rownames_to_column(., "genome") %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
+  filter(class=="c__Fusobacteriia") %>% 
+  column_to_rownames(., "genome") %>% 
+  summarise(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+```
+```{r}
+virulence_summary %>% 
+  rownames_to_column(., "genome") %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
+  filter(class=="c__Fusobacteriia") %>% 
+  column_to_rownames(., "genome") %>% 
+  summarise(across(where(is.numeric), ~ mean(.x, na.rm = TRUE)))
+```
+```{r}
+top10_V1 <- virulence_summary %>% 
+  arrange(desc(V1)) %>%
+  slice(1:10)  
+genome_metadata %>% 
+  filter(genome %in% rownames(top10_V1)) %>%
+  left_join(top10_V1 %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+    arrange(match(genome,rownames(top10_V1))) %>% 
+  select(phylum, family, species, V1, V2, AVI,NVI, V1_2)
+```
+
+## Top 10
+
+```{r}
+top10_V1 <- virulence_summary %>% 
+  arrange(desc(V1)) %>%
+  slice(1:10)
+genome_metadata %>% 
+  filter(genome %in% rownames(top10_V1)) %>%
+  left_join(top10_V1 %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+    arrange(match(genome,rownames(top10_V1))) %>% 
+  select(phylum, family, species, V1, V2, AVI,NVI, V1_2)
+```
+
+```{r}
+top10_V1_2 <- virulence_summary %>% 
+  arrange(desc(V1_2)) %>%
+  slice(1:10)  
+genome_metadata %>% 
+  filter(genome %in% rownames(top10_V1_2)) %>%
+  left_join(top10_V1_2 %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+    arrange(match(genome,rownames(top10_V1_2))) %>% 
+  select(phylum, family, species, V1, V2, AVI,NVI, V1_2)
+```
+```{r}
+top10_AVI <- virulence_summary %>% 
+  arrange(desc(AVI)) %>%
+  slice(1:10)  
+genome_metadata %>% 
+  filter(genome %in% rownames(top10_AVI)) %>%
+  left_join(top10_AVI %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+    arrange(match(genome,rownames(top10_AVI))) %>% 
+  select(phylum, family, species, V1, V2, AVI,NVI, V1_2)
+```
+
+```{r}
+top10_NVI <- virulence_summary %>% 
+  arrange(desc(NVI)) %>%
+  slice(1:10)  
+genome_metadata %>% 
+  filter(genome %in% rownames(top10_NVI)) %>%
+  left_join(top10_NVI %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+    arrange(match(genome,rownames(top10_NVI))) %>% 
+  select(phylum, family, species, V1, V2, AVI,NVI, V1_2)
+```
+
+
+## Mag with highest virulence factor
+
+```{r}
+virulence_summary %>% 
+  filter(V1 == max(V1)) 
+top10 <- virulence_summary %>% 
+  arrange(desc(V1)) %>%
+  slice(1:10)  
+top10
+```
+
+```{r}
+top10_result_V1 <- result_V1 %>% 
+  rownames_to_column(., "genome") %>% 
+  filter(genome %in% rownames(top10))
+```
+```{r}
+genome_metadata %>% 
+  filter(genome %in% rownames(top10)) %>%
+  left_join(top10 %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+    arrange(match(genome,rownames(top10))) %>% 
+  select(species, V1, V2, AVI,NVI)
+```
+
+## Mean top10 values based on v1
+```{r V1_mean, comment="", message=FALSE, warning=FALSE}
+top10_result_V1 %>%
+  column_to_rownames(., "genome") %>% 
+  colSums()%>% 
+  as.data.frame() %>% 
+  rename(V1=".") %>% 
+  arrange(desc(V1))
+
+top10_result_V1 %>%
+  column_to_rownames(., "genome") %>% 
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(V1=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  group_by(region) %>%
+  summarise(average=mean(V1))
+```
+
+```{r V1_plot2, comment="", message=FALSE, warning=FALSE}
+top10_result_V1 %>%
+  column_to_rownames(., "genome")%>%
+  colSums()%>% 
+  as.data.frame() %>% 
+  rename(V1=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(aes(y = V1, x = region, group=region, color=region, fill=region)) +
+  geom_boxplot(outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(alpha=0.5) +
+  stat_compare_means()+
+      scale_color_manual(name="Region",
+          values=c("#e5bd5b", "#6b7398")) +
+      scale_fill_manual(name="Region",
+          values=c("#e5bd5b50", "#6b739850"))+
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    axis.ticks.x = element_blank(),
+        strip.text.x = element_text(size = 12, color="black",face="bold"),
+        strip.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .1, color = "grey"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        legend.text=element_text(size=10),
+        legend.title = element_text(size=12))+
+    guides(fill = guide_legend(override.aes = list(size=3)))
+```
+
+## Mag with highest virulence factor (v1 + v2)
+
+```{r}
+top10_v12 <- virulence_summary %>% 
+  arrange(desc(V1_2)) %>%
+  slice(1:10)  
+top10_v12
+```
+```{r}
+top10_result_V12 <- result_V1_2 %>% 
+  rownames_to_column(., "genome") %>% 
+  filter(genome %in% rownames(top10_v12))
+```
+```{r}
+genome_metadata %>% 
+  filter(genome %in% rownames(top10_v12)) %>%
+  left_join(top10_v12 %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+    arrange(match(genome,rownames(top10_v12))) %>% 
+  select(phylum, family, species, V1, V2, AVI,NVI, V1_2)
+```
+
+## Mean top10 values based on v1 & v2
+```{r V1_mean, comment="", message=FALSE, warning=FALSE}
+top10_result_V12 %>%
+  column_to_rownames(., "genome") %>% 
+  colSums()%>% 
+  as.data.frame() %>% 
+  rename(V1_2=".") %>% 
+  arrange(desc(V1_2))
+
+top10_result_V12 %>%
+  column_to_rownames(., "genome") %>% 
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(V1_2=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample))%>%
+  group_by(region) %>%
+  summarise(average=mean(V1_2))
+```
+
+```{r V12_plot2, comment="", message=FALSE, warning=FALSE}
+top10_result_V12 %>%
+  column_to_rownames(., "genome")%>%
+  colSums()%>% 
+  as.data.frame() %>% 
+  rename(V1_2=".") %>%
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(aes(y = V1_2, x = region, group=region, color=region, fill=region)) +
+  geom_boxplot(outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(alpha=0.5) +
+  stat_compare_means()+
+  scale_color_manual(name="Region",
+          values=c("#e5bd5b", "#6b7398")) +
+  scale_fill_manual(name="Region",
+          values=c("#e5bd5b50", "#6b739850"))+
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    axis.ticks.x = element_blank(),
+        strip.text.x = element_text(size = 12, color="black",face="bold"),
+        strip.background = element_blank(),
+        panel.grid.minor.x = element_line(size = .1, color = "grey"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        legend.text=element_text(size=10),
+        legend.title = element_text(size=12))+
+    guides(fill = guide_legend(override.aes = list(size=3)))
+```
+```{r genus_all, comment="", echo=FALSE}
+phylum_summary <- genome_counts %>%
+  mutate_at(vars(-genome),~./sum(.)) %>% #apply TSS nornalisation
+  pivot_longer(-genome, names_to = "sample", values_to = "count") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>%
+  group_by(sample,phylum,region) %>%
+  summarise(relabun=sum(count))
+
+genus_arrange <- genus_summary %>%
+    group_by(genus) %>%
+    summarise(mean=sum(relabun)) %>%
+    filter(genus != "g__")%>%
+    arrange(-mean) %>%
+    dplyr::select(genus) %>%
+    mutate(genus= sub("^g__", "", genus)) %>%
+    pull()
+
+genus_summary %>%
+    group_by(genus) %>%
+    summarise(total_mean=mean(relabun*100, na.rm=T),
+              total_sd=sd(relabun*100, na.rm=T),
+              Daneborg_mean=mean(relabun[region=="Daneborg"]*100, na.rm=T),
+              Daneborg_sd=sd(relabun[region=="Daneborg"]*100, na.rm=T),
+              Ittoqqortoormiit_mean=mean(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T),
+              Ittoqqortoormiit_sd=sd(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T)) %>%
+    mutate(total=str_c(round(total_mean,2),"±",round(total_sd,2)),
+           Daneborg=str_c(round(Daneborg_mean,2),"±",round(Daneborg_sd,2)),
+           Ittoqqortoormiit=str_c(round(Ittoqqortoormiit_mean,2),"±",round(Ittoqqortoormiit_sd,2))) %>% 
+    arrange(-total_mean) %>% 
+    select(genus,total,Daneborg,Ittoqqortoormiit) %>% 
+    tt()
+```
+
+```{r virul_phylum, comment="", echo=FALSE}
+virulence_summary_meta %>%
+    group_by(phylum) %>%
+  summarise(V1_mean=mean(V1), V1_sd=sd(V1)) %>% 
+  arrange(-V1_mean)
+```
+
+
+```{r virul_family, comment="", echo=FALSE}
+virulence_summary_meta %>%
+    group_by(family) %>%
+  summarise(V1=mean(V1)) %>% 
+  arrange(-V1)
+```
+
+```{r virul_family, comment="", echo=FALSE}
+virulence_summary_meta %>%
+    group_by(genus) %>%
+  summarise(V1=mean(V1)) %>% 
+  arrange(-V1)
+```
+
+```{r genus_all, comment="", echo=FALSE}
+genus_summary <- genome_counts_rel %>% 
+  rownames_to_column(., "genome") %>% 
+  pivot_longer(-genome, names_to = "sample", values_to = "count") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  select(sample, genome, count, region) %>% 
+  group_by(sample,genome,region) %>%
+  summarise(relabun=sum(count)) %>% 
+    left_join(genome_metadata, by = join_by(genome == genome))
+
+abundant_mags <- genus_summary %>%
+    group_by(genome) %>%
+    summarise(total_mean=mean(relabun*100, na.rm=T),
+              total_sd=sd(relabun*100, na.rm=T),
+              Daneborg_mean=mean(relabun[region=="Daneborg"]*100, na.rm=T),
+              Daneborg_sd=sd(relabun[region=="Daneborg"]*100, na.rm=T),
+              Ittoqqortoormiit_mean=mean(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T),
+              Ittoqqortoormiit_sd=sd(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T)) %>%
+    mutate(total=str_c(round(total_mean,2),"±",round(total_sd,2)),
+           Daneborg=str_c(round(Daneborg_mean,2),"±",round(Daneborg_sd,2)),
+           Ittoqqortoormiit=str_c(round(Ittoqqortoormiit_mean,2),"±",round(Ittoqqortoormiit_sd,2))) 
+
+# virulence_summary_meta <- virulence_summary %>% 
+#   rownames_to_column("genome") %>% 
+#   left_join(genome_metadata, by=join_by(genome==genome))
+
+abundant_mags %>% 
+    arrange(-Ittoqqortoormiit_mean) %>% 
+    select(genome,total,Daneborg,Ittoqqortoormiit) %>% 
+    slice(1:15) %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
+  left_join(virulence_summary %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+  arrange(-V1_2)
+
+
+abundant_mags %>% 
+    arrange(-Ittoqqortoormiit_mean) %>% 
+    select(genome,total,Daneborg,Ittoqqortoormiit) %>% 
+    slice(1:15) %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
+  left_join(virulence_summary %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+  summarise(average=mean(V1_2))
+
+```
+```{r}
+abundant_mags %>% 
+    arrange(-Daneborg_mean) %>% 
+    select(genome,total,Daneborg,Ittoqqortoormiit) %>% 
+    slice(1:15) %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
+  left_join(virulence_summary %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+  arrange(-V1_2)
+
+abundant_mags %>% 
+    arrange(-Daneborg_mean) %>% 
+    select(genome,total,Daneborg,Ittoqqortoormiit) %>% 
+    slice(1:15) %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
+  left_join(virulence_summary %>% rownames_to_column("genome"), by = join_by(genome == genome)) %>% 
+  summarise(average=mean(V1_2))  
+```
