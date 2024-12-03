@@ -8,7 +8,6 @@ load("data/data.Rdata")
 
 ```{r genome_phylogeny, message=FALSE, warning=FALSE, fig.height=10, fig.width=10, fig.fullwidth=TRUE}
 # Generate the phylum color heatmap
-
 phylum_heatmap <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
     mutate(phylum=str_remove_all(phylum, "p__")) %>%
     right_join(genome_metadata, by=join_by(phylum == phylum)) %>%
@@ -22,9 +21,9 @@ circular_tree <- force.ultrametric(genome_tree, method="extend") %>% # extend to
     ggtree(., layout="fan", open.angle=10, size=0.5)
 
 # Add phylum ring
-circular_tree <- gheatmap(circular_tree, phylum_heatmap, offset=0.55, width=0.1, colnames=FALSE) +
+circular_tree <- gheatmap(circular_tree, phylum_heatmap, offset=-0.1, width=0.1, colnames=FALSE) +
         scale_fill_manual(values=phylum_colors) +
-        geom_tiplab2(size=1, hjust=-0.1) +
+#        geom_tiplab2(size=1, hjust=-0.1) +
         theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0))
 
 # Flush color scale to enable a new color scheme in the next ring
@@ -38,7 +37,7 @@ circular_tree <- circular_tree +
                 data=genome_metadata,
                 geom=geom_bar,
                 mapping = aes(x=completeness, y=genome, fill=contamination),
-                offset = 0.55,
+                offset = 0.125,
                 orientation="y",
               stat="identity")
 
@@ -56,14 +55,14 @@ circular_tree <-  circular_tree +
 
 # Add text
 circular_tree <-  circular_tree +
-        annotate('text', x=2.7, y=0, label='            Phylum', family='arial', size=3.5) +
-        annotate('text', x=3.1, y=0, label='                         Genome quality', family='arial', size=3.5) +
-        annotate('text', x=3.5, y=0, label='                     Genome size', family='arial', size=3.5)
+        annotate('text', x=2.9, y=0, label='                Phylum', family='arial', size=3.5) +
+        annotate('text', x=3.3, y=0, label='                             Genome quality', family='arial', size=3.5) +
+        annotate('text', x=3.825, y=0, label='                         Genome size', family='arial', size=3.5)
 
+# note to self: use the number of spaces in label= to shift the y position of the text relative to the rings. 
 #Plot circular tree
 circular_tree %>% open_tree(30) %>% rotate_tree(90)
 ```
-
 ## Genome quality
 
 ```{r genome_quality}
@@ -91,7 +90,7 @@ genome_biplot <- genome_metadata %>%
                     scale_color_manual(values=phylum_colors) +
                     labs(y= "Contamination", x = "Completeness") +
                     theme_classic() +
-                    theme(legend.position = "none")
+                    theme(legend.position = "right")
 
 #Generate contamination boxplot
 genome_contamination <- genome_metadata %>%
@@ -99,7 +98,7 @@ genome_contamination <- genome_metadata %>%
                     ylim(c(10,0)) +
                     geom_boxplot(colour = "#999999", fill="#cccccc") +
                     theme_void() +
-                    theme(legend.position = "none",
+                    theme(legend.position = "right",
                         axis.title.x = element_blank(),
                         axis.title.y = element_blank(),
                         axis.text.y=element_blank(),
@@ -114,7 +113,7 @@ genome_completeness <- genome_metadata %>%
                 xlim(c(70,100)) +
                 geom_boxplot(colour = "#999999", fill="#cccccc") +
                 theme_void() +
-                theme(legend.position = "none",
+                theme(legend.position = "",
                     axis.title.x = element_blank(),
                     axis.title.y = element_blank(),
                     axis.text.y=element_blank(),
