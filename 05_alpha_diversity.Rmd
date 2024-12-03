@@ -50,7 +50,6 @@ dist <- genome_gifts %>%
   to.elements(., GIFT_db) %>%
   traits2dist(., method = "gower")
 
-
 functional <- genome_counts_filt %>%
   column_to_rownames(var = "genome") %>%
   dplyr::select(where(~ !all(. == 0))) %>%
@@ -61,7 +60,6 @@ functional <- genome_counts_filt %>%
   rownames_to_column(var = "sample") %>%
   mutate(functional = if_else(is.nan(functional), 1, functional))
 ```
-
 
 ## Mean and standard deviation
 ```{r merge_alpha_div, comment="", message=FALSE, warning=FALSE}
@@ -230,3 +228,45 @@ plot4 <- alpha_div %>%
 ```{r div_plot_together, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
 grid.arrange(arrangeGrob(plot1,plot2,plot3,plot4, ncol = 2)) 
 ```
+## Statistical testing when significance detected via plotting
+```{r}
+# Shapiro-Wilk test for normality
+alpha_div_meta %>%
+  dplyr::select(region, sample, phylogenetic)  %>%
+  filter(region %in% c("Daneborg", "Ittoqqortoormiit")) %>%
+  group_by(region) %>%
+  summarise(shapiro_p = shapiro.test(phylogenetic)$p.value) -> shapiro_results_P
+# Results: Daneborg = 0.5932516 Ittoqqortoormiit = 0.9877714
+# Data is normally distributed, thus parametric tests may be applied
+
+alpha_div_meta %>%
+  dplyr::select(region, sample, phylogenetic) %>%
+  filter(region %in% c("Daneborg", "Ittoqqortoormiit")) %>%
+  bartlett.test(phylogenetic ~ region, data = .) -> bartlett_results_P
+# Results: p-value = 0.006405
+# Thus equal variance cannot be assumed
+
+# T test assuming unequal variance
+alpha_div_meta %>%
+  select(region, sample, phylogenetic) %>%
+  filter(region %in% c("Daneborg", "Ittoqqortoormiit")) %>%
+  group_by(region) %>%
+  summarise(
+    t_test_p = t.test(phylogenetic ~ region, data = ., var.equal = FALSE)$p.value,
+    W_score = t.test(phylogenetic ~ region, data = ., var.equal = FALSE)$statistic
+  ) -> t_test_results_P
+# Results: p= 0.009434883; W = -2.711391	
+
+# Wilcoxon
+alpha_div_meta %>%
+  select(region, sample, phylogenetic) %>%
+  filter(region %in% c("Daneborg", "Ittoqqortoormiit")) %>%
+  group_by(region) %>%
+  summarise(
+    wilcox_p = wilcox.test(phylogenetic ~ region, data = .)$p.value,
+    W_statistic = wilcox.test(phylogenetic ~ region, data = .)$statistic
+  ) -> wilcox_results
+# Results: p= 0.006481063	, W = 247
+```
+```
+
