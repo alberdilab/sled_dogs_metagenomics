@@ -175,26 +175,30 @@ plot2 <- alpha_div %>%
 plot3 <- alpha_div %>%
   left_join(., sample_metadata, by = join_by(sample == sample)) %>%
   ggplot(aes(x = region, y = phylogenetic, group = region, color = region, fill = region)) +
-      geom_boxplot(width = 0.5, outlier.shape = NA, show.legend = FALSE) +
-      geom_jitter(width = 0.2, alpha=0.5,show.legend = FALSE) +
- stat_compare_means(label.x = 1.2, 
+  geom_boxplot(width = 0.5, outlier.shape = NA, show.legend = FALSE) +
+  geom_jitter(width = 0.2, alpha = 0.5, show.legend = FALSE) +
+   stat_compare_means(label.x = 1.2, 
                      label.y = 10,
-                    show.legend = FALSE)+
-      scale_color_manual(name="Region",
-          values=c("#e5bd5b", "#6b7398")) +
-      scale_fill_manual(name="Region",
-          values=c("#e5bd5b50", "#6b739850")) +
-  theme(axis.text.x = element_text(vjust = 0.5),
+                    show.legend = FALSE) +
+  annotate(
+    "text", x = 2.3, y = 10.1, # corrected position of * on print figure
+    label = "*", size = 6, fontface = "bold") +
+  scale_color_manual(name = "Region",
+    values = c("#e5bd5b", "#6b7398")) +
+  scale_fill_manual(name = "Region",
+    values = c("#e5bd5b50", "#6b739850")) +
+  theme(
+    axis.text.x = element_text(vjust = 0.5),
     axis.title = element_text(size = 14, face = "bold"),
     axis.text = element_text(face = "bold", size = 12),
     axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)),
     axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0)),
     panel.background = element_blank(),
-    # panel.border = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black")) +
-  guides(colour = guide_legend(override.aes = list(size = 6)))+
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black")
+  ) +
+  guides(colour = guide_legend(override.aes = list(size = 6))) +
   labs(x = NULL, y = "Phylogenetic")
 ```
 ```{r alpha_div_func, comment="", echo=FALSE, message=FALSE, warning=FALSE}
@@ -228,8 +232,14 @@ plot4 <- alpha_div %>%
 ```{r div_plot_together, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
 grid.arrange(arrangeGrob(plot1,plot2,plot3,plot4, ncol = 2)) 
 ```
+Graph w/o functional plot:
+```{r div_plot_together_no_func, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=10, fig.fullwidth=TRUE}
+grid.arrange(arrangeGrob(plot1,plot2,plot3, ncol = 3)) 
+```
+
 ## Statistical testing when significance detected via plotting
 ```{r}
+#Phylogenetic
 # Shapiro-Wilk test for normality
 alpha_div_meta %>%
   dplyr::select(region, sample, phylogenetic)  %>%
@@ -268,5 +278,28 @@ alpha_div_meta %>%
   ) -> wilcox_results
 # Results: p= 0.006481063	, W = 247
 ```
+```{r}
+#Functional
+# Shapiro-Wilk test for normality
+alpha_div_meta %>%
+  dplyr::select(region, sample, functional)  %>%
+  filter(region %in% c("Daneborg", "Ittoqqortoormiit")) %>%
+  group_by(region) %>%
+  summarise(shapiro_p = shapiro.test(functional)$p.value) -> shapiro_results_F
+# Results: Daneborg = 7.498381e-09 Ittoqqortoormiit = 2.627117e-03	
+# Data is not normally distributed
+
+# Wilcoxon
+alpha_div_meta %>%
+  select(region, sample, functional) %>%
+  filter(region %in% c("Daneborg", "Ittoqqortoormiit")) %>%
+  group_by(region) %>%
+  summarise(
+    wilcox_f = wilcox.test(functional ~ region, data = .)$p.value,
+    W_statistic = wilcox.test(functional ~ region, data = .)$statistic
+  ) -> wilcox_results_F
+# Results: p=0.0001328166	, W = 182	
+```
+
 ```
 
