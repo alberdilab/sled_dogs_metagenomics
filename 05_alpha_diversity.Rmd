@@ -201,20 +201,23 @@ plot3 <- alpha_div %>%
   guides(colour = guide_legend(override.aes = list(size = 6))) +
   labs(x = NULL, y = "Phylogenetic")
 ```
+
 ```{r alpha_div_func, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 plot4 <- alpha_div %>%
   left_join(., sample_metadata, by = join_by(sample == sample)) %>%
   ggplot(aes(x = region, y = functional, group = region, color = region, fill = region)) +
       geom_boxplot(width = 0.5, outlier.shape = NA, show.legend = FALSE) +
       geom_jitter(width = 0.2, alpha=0.5,show.legend = FALSE) +
+    annotate("text", x = 1.72, y = 1.63,  # Adjusted for the ylim range
+           label = "*", size = 6, fontface = "bold") +
  stat_compare_means(label.x = 1.2, 
-                     label.y = 1.7,
+                     label.y = 1.625,
                     show.legend = FALSE)+
       scale_color_manual(name="Region",
           values=c("#e5bd5b", "#6b7398")) +
       scale_fill_manual(name="Region",
           values=c("#e5bd5b50", "#6b739850")) + 
-        ylim(1.2,1.75)+
+        ylim(1.2,1.63)+
   theme(axis.text.x = element_text(vjust = 0.5),
     axis.title = element_text(size = 14, face = "bold"),
     axis.text = element_text(face = "bold", size = 12),
