@@ -227,8 +227,6 @@ significant_elements_ittoq_15 <- significant_elements_ittoq %>%
   arrange(desc(p_value)) %>%
   slice_head(n = 15)
 
-
-# Assign color palette to each function
 func_colors <- c(
   "#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD", 
   "#8C564B", "#E377C2", "#7F7F7F", "#BCBD22", "#17BECF", 
@@ -236,12 +234,10 @@ func_colors <- c(
   "#9B1B30", "#3B8C4D"
 )
 
-# Create a data frame with unique functions and map the colors
 func_table <- as.data.frame(unique(significant_elements_plot$Function.x))
 colnames(func_table)[1] <- "Function"
 names(func_colors) <- func_table$Function
 
-# Daneborg plot
 element_func_plot_daneb <- ggplot(significant_elements_daneb, 
                                   aes(x = forcats::fct_reorder(Element, Function.x),
                                       y = -log10(p_adjust),
@@ -263,7 +259,6 @@ element_func_plot_daneb <- ggplot(significant_elements_daneb,
   ggtitle("Daneborg") + 
   guides(col = guide_legend("Function"))
 
-# Ittoqqortoormiit plot with the top 15 elements
 element_func_plot_ittoq <- ggplot(significant_elements_ittoq_15, 
                                   aes(x = forcats::fct_reorder(Element, Function.x),
                                       y = -log10(p_adjust),
