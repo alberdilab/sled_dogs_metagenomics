@@ -111,7 +111,7 @@ GIFTs_domains_community %>%
         ) +
         labs(x="Function", y="Sample",fill="GIFT")
 ```
-
+# ONLY USE WILCOXON FOR DA FUNC AS OF 08/12/2024!!!!
 ## Wilcoxon
 
 ### Community elements differences:
@@ -196,6 +196,118 @@ for(i in colNames){
 print(plt)
 }
 ```
+```{r}
+elements_means <- element_gift_filt %>%
+  select(-sample) %>%
+  group_by(region) %>%
+  summarise(across(everything(), mean, na.rm = TRUE)) %>% 
+  pivot_longer(-region, names_to = "Elements", values_to = "mean_value") %>%  
+  pivot_wider(names_from = region, values_from = mean_value) %>%  
+  mutate(
+    Enriched_in = case_when(
+      `Daneborg` > `Ittoqqortoormiit` ~ "Daneborg",  
+      `Daneborg` < `Ittoqqortoormiit` ~ "Ittoqqortoormiit"
+    )
+  )
+
+significant_elements_plot <- significant_elements %>%
+  left_join(elements_means %>% select(Elements, Enriched_in), by = c("trait" = "Elements")) %>%
+  left_join(uniqueGIFT_db %>% select(Code_element, Domain, Element, Function), by = c("trait" = "Code_element"))
+significant_elements_plot <- significant_elements_plot %>%
+  select(-Function.y)
+significant_elements_plot <- significant_elements_plot %>%
+  mutate(Function.x = sub("_.*", "", Function.x))  
+
+
+significant_elements_daneb <- significant_elements_plot %>%
+  filter(Enriched_in == "Daneborg")
+significant_elements_ittoq <- significant_elements_plot %>%
+  filter(Enriched_in == "Ittoqqortoormiit")
+significant_elements_ittoq_15 <- significant_elements_ittoq %>%
+  arrange(desc(p_value)) %>%
+  slice_head(n = 15)
+
+
+# Assign color palette to each function
+func_colors <- c(
+  "#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD", 
+  "#8C564B", "#E377C2", "#7F7F7F", "#BCBD22", "#17BECF", 
+  "#F4A582", "#D6604D", "#F1A340", "#B66E41", "#7B4D19", 
+  "#9B1B30", "#3B8C4D"
+)
+
+# Create a data frame with unique functions and map the colors
+func_table <- as.data.frame(unique(significant_elements_plot$Function.x))
+colnames(func_table)[1] <- "Function"
+names(func_colors) <- func_table$Function
+
+# Daneborg plot
+element_func_plot_daneb <- ggplot(significant_elements_daneb, 
+                                  aes(x = forcats::fct_reorder(Element, Function.x),
+                                      y = -log10(p_adjust),
+                                      color = Function.x)) +
+  geom_point(size = 4) + 
+  geom_hline(yintercept = 0) + 
+  coord_flip() +
+  scale_color_manual(values = func_colors) +  # Use custom colors here
+  theme(
+    axis.text = element_text(size = 8, face = "italic"),
+    axis.title = element_text(size = 12),
+    legend.position = "none", 
+    legend.title = element_blank(),
+    panel.background = element_blank(),
+    panel.grid.major = element_line(size = 0.15, linetype = 'solid', colour = "grey")
+  ) +
+  xlab(" ") + 
+  ylab("-log10(p-value)") + 
+  ggtitle("Daneborg") + 
+  guides(col = guide_legend("Function"))
+
+# Ittoqqortoormiit plot with the top 15 elements
+element_func_plot_ittoq <- ggplot(significant_elements_ittoq_15, 
+                                  aes(x = forcats::fct_reorder(Element, Function.x),
+                                      y = -log10(p_adjust),
+                                      color = Function.x)) +
+  geom_point(size = 4) + 
+  geom_hline(yintercept = 0) + 
+  coord_flip() +
+  scale_color_manual(values = func_colors) +  # Use custom colors here
+  theme(
+    axis.text = element_text(size = 8, face = "italic"),
+    axis.title = element_text(size = 12),
+    legend.position = "none", 
+    legend.title = element_blank(),
+    panel.background = element_blank(),
+    panel.grid.major = element_line(size = 0.15, linetype = 'solid', colour = "grey")
+  ) +
+  xlab(" ") + 
+  ylab("-log10(p-value)") + 
+  ggtitle("Ittoqqortoormiit") + 
+  guides(col = guide_legend("Function"))
+
+functions_in_both_plots <- union(unique(significant_elements_daneb$Function.x), 
+                                 unique(significant_elements_ittoq_15$Function.x))
+func_colors_filtered <- func_colors[functions_in_both_plots]
+legend_only_plot <- ggplot(data = data.frame(Function = functions_in_both_plots), 
+                           aes(x = 1, y = Function, color = Function)) +
+  geom_point(size = 3) +
+  scale_color_manual(values = func_colors_filtered) + 
+  theme_void() +
+  theme(legend.position = "right", 
+        legend.title = element_blank(), 
+        legend.text = element_text(size = 10, face = "italic"))
+```
+```{r div_plot_together_no_func, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=10, fig.fullwidth=TRUE}
+grid.arrange(
+  element_func_plot_daneb,
+  element_func_plot_ittoq,
+  legend_only_plot,
+  ncol = 3,
+  widths = c(3, 3, 2),
+  heights = c(1),
+  top = "Top 15 enriched functions in each location"
+)
+```
 
 ### Community functions differences
 
@@ -219,6 +331,8 @@ significant_functional <- function_gift %>%
     filter(p_adjust < 0.05)%>%
   left_join(.,unique_funct_db[c(1,3)],by = join_by(trait == Code_function))
 
+significant_functional_ordered <- significant_functional %>%
+  arrange(desc(p_value))
 ```
 ```{r  function_sig, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 function_gift_t <- function_gift  %>% 
@@ -236,7 +350,6 @@ function_gift_filt <- subset(function_gift_t, trait %in% significant_functional$
   mutate_if(is.character, as.numeric)  %>%
   rownames_to_column(., "sample")%>% 
   left_join(., sample_metadata[c(1,4)], by = join_by(sample == sample))
-
 
 function_gift_filt %>%
   select(-sample)%>%
@@ -296,18 +409,72 @@ domain_gift <- GIFTs_domains_community %>%
   rownames_to_column(., "sample") %>% 
   merge(., sample_metadata[c(1,4)], by="sample")
 ```
-
 ```{r commun_wilcox_dom, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 unique_domain_db<- GIFT_db[c(4)] %>% 
   distinct(Domain, .keep_all = TRUE)
 
 significant_domain <- domain_gift %>%
-    pivot_longer(-c(sample,region), names_to = "trait", values_to = "value") %>%
-    group_by(trait) %>%
-    summarise(p_value = wilcox.test(value ~ region, exact = FALSE, alternative = "less")$p.value) %>%
-    mutate(p_adjust=p.adjust(p_value, method="BH"))
+  pivot_longer(-c(sample, region), names_to = "trait", values_to = "value") %>%
+  group_by(trait) %>%
+  summarise(
+    wilcox_results = list(wilcox.test(value ~ region)),
+    p_value = wilcox_results[[1]]$p.value,
+    W_score = wilcox_results[[1]]$statistic
+  ) %>%
+  ungroup() %>%
+  mutate(p_adjust = p.adjust(p_value, method = "BH")) %>%
+  filter(p_adjust < 0.05) %>%
+  left_join(., unique_domain_db[c(1, 1)], by = join_by(trait == Domain))
+```
+```{r}
+domain_gift_t <- domain_gift  %>% 
+  select(-region)  %>% 
+  t() %>%
+  row_to_names(row_number = 1) %>%
+  as.data.frame() %>%
+  mutate_if(is.character, as.numeric)  %>%
+  rownames_to_column(., "trait")
+
+domain_gift_filt <- subset(domain_gift_t, trait %in% significant_domain$trait) %>% 
+  t() %>%
+  row_to_names(row_number = 1) %>%
+  as.data.frame() %>%
+  mutate_if(is.character, as.numeric)  %>%
+  rownames_to_column(., "sample")%>% 
+  left_join(., sample_metadata[c(1,4)], by = join_by(sample == sample))
+
+domain_gift_filt %>%
+  select(-sample)%>%
+  group_by(region)  %>%
+  summarise(across(everything(), mean))%>%
+   t() %>%
+  row_to_names(row_number = 1) %>%
+  as.data.frame() %>%
+  mutate_if(is.character, as.numeric)  %>%
+  rownames_to_column(., "Code_function")  %>%
+  left_join(.,unique_domain_db[c(1,1)],by = join_by(Code_function == Domain)) %>%
+  column_to_rownames(., var = "Code_function")
+```
+```{r}
+colNames <- names(domain_gift_filt)[2:3]
+for(i in colNames){
+  plt <- ggplot(domain_gift_filt, aes(x=region, y=.data[[i]], color = region, fill=region)) +
+    geom_boxplot(alpha = 0.2, outlier.shape = NA, width = 0.3, show.legend = FALSE) +
+  geom_jitter(width = 0.1, show.legend = TRUE) +
+    scale_color_manual(values=c("#e5bd5b", "#6b7398"))+
+    scale_fill_manual(values=c("#e5bd5b", "#6b7398"))+
+  theme_minimal() +
+  theme(
+    axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank())
+print(plt)
+}
 ```
 
+
+# DO NOT USE ANYTHING BELOW THIS LINE AS OF 08/12/2024!!!!!!
 ## ANCOM-BC2
 
 ### Element level
