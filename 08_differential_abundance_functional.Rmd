@@ -30,6 +30,101 @@ GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_row,GIFT
 GIFTs_domains_community <- to.community(GIFTs_domains,genome_counts_row,GIFT_db)
 ```
 
+```{r phylum_elem_capacity, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=10, fig.fullwidth=TRUE}
+GIFTs_elements_filtered %>% 
+  rownames_to_column("genome") %>%
+  left_join(genome_metadata[,1:8], by = join_by(genome == genome)) %>% group_by(phylum)  %>%
+  summarize(across(where(is.numeric), mean, na.rm = TRUE))%>%
+    pivot_longer(!phylum,names_to="trait",values_to="gift") %>%
+    mutate(functionid = substr(trait, 1, 3)) %>%
+    mutate(trait = case_when(
+      trait %in% GIFT_db$Code_element ~ GIFT_db$Element[match(trait, GIFT_db$Code_element)],
+      TRUE ~ trait
+    )) %>%
+    mutate(functionid = case_when(
+      functionid %in% GIFT_db$Code_function ~ GIFT_db$Function[match(functionid, GIFT_db$Code_function)],
+      TRUE ~ functionid
+    )) %>%
+    mutate(trait=factor(trait,levels=unique(GIFT_db$Element))) %>%
+    mutate(functionid=factor(functionid,levels=unique(GIFT_db$Function))) %>%
+    ggplot(aes(x=phylum,y=trait,fill=gift)) +
+        geom_tile(colour="white", linewidth=0.2)+
+        scale_fill_gradientn(colours=rev(c("#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#e6f598", "#abdda4", "#ddf1da")))+
+        facet_grid(functionid ~ ., scales="free",space="free") +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+              axis.text.y = element_text(size=6),
+              strip.text.y = element_text(angle = 0)
+              ) +
+        labs(y="Traits",x="Samples",fill="GIFT")
+
+```
+## Functional capacity of the structural MAGs
+```{r structural_zeros}
+ittoq_samples <- sample_metadata %>% 
+  filter(region == "Ittoqqortoormiit") %>%
+  dplyr::select(sample) %>%
+  pull()
+
+daneb_samples <- sample_metadata %>% 
+  filter(region == "Daneborg") %>%
+  dplyr::select(sample) %>%
+  pull()
+
+structural_zeros <- genome_counts %>% 
+   rowwise() %>% #compute for each row (genome)
+   mutate(all_zeros_ittoq = all(c_across(all_of(ittoq_samples)) == 0)) %>% # set true if all samples in Ittoq have zeros
+   mutate(all_zeros_daneb = all(c_across(all_of(daneb_samples)) == 0)) %>% # set true if all samples in Daneborg have zeros
+   mutate(average_ittoq = mean(c_across(all_of(ittoq_samples)), na.rm = TRUE)) %>% # get average genome counts across Ittoq
+   mutate(average_daneb = mean(c_across(all_of(daneb_samples)), na.rm = TRUE)) %>% # get average genome counts across Daneborg
+   filter(all_zeros_ittoq == TRUE || all_zeros_daneb==TRUE)  %>% # filter only genomes with structural zeros
+   mutate(present = case_when(
+      all_zeros_ittoq & !all_zeros_daneb ~ "Daneborg",
+      !all_zeros_ittoq & all_zeros_daneb ~ "Ittoq",
+      !all_zeros_ittoq & !all_zeros_daneb ~ "None",
+      TRUE ~ NA_character_
+    )) %>%
+   mutate(average = ifelse(present == "Ittoq", average_ittoq, average_daneb)) %>%
+   dplyr::select(genome, present, average) %>%
+   left_join(genome_metadata, by=join_by(genome==genome)) %>%
+   arrange(present,-average)
+structural_zeros
+struct_mag <- structural_zeros %>% 
+  filter(present %in% c("Ittoq","Daneborg")) %>% 
+  select(genome) %>% 
+  pull()
+struct_mag_meta <- structural_zeros %>% 
+  filter(present %in% c("Ittoq","Daneborg"))
+```
+
+```{r structural_functional_capacity2, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=10, fig.fullwidth=TRUE}
+GIFTs_elements_filtered %>% 
+  rownames_to_column("genome") %>%
+  filter(genome %in% struct_mag)  %>% 
+    pivot_longer(!genome,names_to="trait",values_to="gift") %>% 
+    left_join(struct_mag_meta, by = join_by(genome == genome))%>%
+    mutate(functionid = substr(trait, 1, 3)) %>%
+    mutate(trait = case_when(
+      trait %in% GIFT_db$Code_element ~ GIFT_db$Element[match(trait, GIFT_db$Code_element)],
+      TRUE ~ trait
+    )) %>%
+    mutate(functionid = case_when(
+      functionid %in% GIFT_db$Code_function ~ GIFT_db$Function[match(functionid, GIFT_db$Code_function)],
+      TRUE ~ functionid
+    )) %>%
+    mutate(trait=factor(trait,levels=unique(GIFT_db$Element))) %>%
+    mutate(functionid=factor(functionid,levels=unique(GIFT_db$Function))) %>%
+    ggplot(aes(x=genome,y=trait,fill=gift)) +
+        geom_tile(colour="white", linewidth=0.2)+
+        scale_fill_gradientn(colours=rev(c("#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#e6f598", "#abdda4", "#ddf1da")))+
+        facet_grid(functionid ~ present, scales="free",space="free") +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+              axis.text.y = element_text(size=6),
+              strip.text.y = element_text(angle = 0)
+              ) +
+        labs(y="Traits",x="Samples",fill="GIFT")
+
+```
+
 ```{r comunity_elem_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
 GIFTs_elements_community %>%
     as.data.frame() %>%
@@ -159,7 +254,82 @@ element_gift_filt %>%
   mutate_if(is.character, as.numeric)  %>%
   rownames_to_column(., "Elements")  %>%
   left_join(.,uniqueGIFT_db[c(1,3)],by = join_by(Elements == Code_element))
+
+difference_table <- element_gift_filt %>%
+  select(-sample) %>%
+  group_by(region) %>%
+  summarise(across(everything(), mean)) %>%
+  t() %>%
+  row_to_names(row_number = 1) %>%
+  as.data.frame() %>%
+  mutate_if(is.character, as.numeric) %>%
+  rownames_to_column(., "Elements") %>%
+  left_join(.,uniqueGIFT_db[c(1,3,4)],by = join_by(Elements == Code_element)) %>% 
+  arrange(Function) %>% 
+  mutate(Difference=Ittoqqortoormiit-Daneborg)%>% 
+  mutate(group_color = ifelse(Difference <0, "Daneborg","Ittoq")) 
 ```
+```{r log_fold_calc, comment="", echo=FALSE, message=FALSE, warning=FALSE}
+means_gift <- element_gift_filt %>% 
+  select(-region) %>% 
+  pivot_longer(!sample, names_to = "elements", values_to = "abundance") %>% 
+  left_join(sample_metadata, by=join_by(sample==sample)) %>% 
+  group_by(region, elements) %>%
+  summarise(mean=mean(abundance))
+
+log_fold <- means_gift %>%
+  group_by(elements) %>%
+  summarise(
+    logfc_region = log2(mean[region == "Ittoqqortoormiit"] / mean[region == "Daneborg"])
+    )
+```
+
+```{r}
+uniqueGIFT <- unique(GIFT_db[c(2,3,4,5,6)])
+
+code_function2 <- difference_table %>%
+  left_join(uniqueGIFT[c(1:3)], by=join_by(Elements==Code_element))
+
+unique_codes<-unique(code_function2$Code_function)
+
+gift_colors <- read_tsv("data/gift_colors.tsv") %>% 
+  filter(Code_function %in% unique_codes)%>% 
+  mutate(legend=str_c(Code_function," - ",Function))
+```
+
+```{r final_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=12, fig.fullwidth=TRUE}
+code_function2 %>%
+  left_join(significant_elements, by=join_by(Elements==trait)) %>%
+  left_join(log_fold, by=join_by(Elements==elements)) %>% 
+  left_join(gift_colors, by=join_by(Code_function==Code_function)) %>% 
+  ggplot(., aes(x = logfc_region, y = -log(p_adjust), color=legend, size=abs(Difference))) +
+  geom_jitter(width = 0.2, height = 0.2)+
+  geom_vline(xintercept=0) +
+  scale_color_manual(values = gift_colors$Color)+
+  theme_classic()+
+  labs(size="Mean difference (abs)", color="Functional trait")+
+  labs(x = "Log-fold change", y="-Log adjusted p-value") +
+  geom_text_repel(aes(label = Element), min.segment.length = 0.4, size=2.5, max.overlaps = Inf)
+```
+```{r commun_wilcox_elem_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE, eval=FALSE}
+difference_table %>%
+  ggplot(aes(x=forcats::fct_reorder(Function,Difference), y=Difference, fill=group_color)) + 
+  geom_col() +
+#  geom_point(size=4) + 
+  scale_fill_manual(values=c("#e5bd5b", "#6b7398")) + 
+  geom_hline(yintercept=0) + 
+  coord_flip()+
+  theme(axis.text = element_text(size = 10),
+        axis.title = element_text(size = 12),
+        legend.position = "right", 
+        legend.title = element_blank(),
+        panel.background = element_blank(),
+          panel.grid.major = element_line(size = 0.15, linetype = 'solid',
+                                colour = "grey"))+
+  xlab("Function") + 
+  ylab("Mean difference")
+```
+
 
 ```{r elements_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 element_gift_names <- element_gift_filt%>%
@@ -196,7 +366,15 @@ for(i in colNames){
 print(plt)
 }
 ```
+
+# Maybe delete this one. check tomorrow. 
 ```{r}
+
+gift_colors <- read_tsv("data/gift_colors.tsv") %>% 
+  filter(Code_function %in% unique_codes)%>% 
+  mutate(legend=str_c(Code_function," - ",Function))
+
+
 elements_means <- element_gift_filt %>%
   select(-sample) %>%
   group_by(region) %>%
@@ -227,12 +405,9 @@ significant_elements_ittoq_15 <- significant_elements_ittoq %>%
   arrange(desc(p_value)) %>%
   slice_head(n = 15)
 
-func_colors <- c(
-  "#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD", 
-  "#8C564B", "#E377C2", "#7F7F7F", "#BCBD22", "#17BECF", 
-  "#F4A582", "#D6604D", "#F1A340", "#B66E41", "#7B4D19", 
-  "#9B1B30", "#3B8C4D"
-)
+gift_colors <- read_tsv("data/gift_colors.tsv") %>% 
+  filter(Code_function %in% unique_codes)%>% 
+  mutate(legend=str_c(Code_function," - ",Function))
 
 func_table <- as.data.frame(unique(significant_elements_plot$Function.x))
 colnames(func_table)[1] <- "Function"
@@ -245,7 +420,7 @@ element_func_plot_daneb <- ggplot(significant_elements_daneb,
   geom_point(size = 4) + 
   geom_hline(yintercept = 0) + 
   coord_flip() +
-  scale_color_manual(values = func_colors) +  # Use custom colors here
+  scale_color_manual(values = gift_colors) +  # Use custom colors here
   theme(
     axis.text = element_text(size = 8, face = "italic"),
     axis.title = element_text(size = 12),
@@ -266,7 +441,7 @@ element_func_plot_ittoq <- ggplot(significant_elements_ittoq_15,
   geom_point(size = 4) + 
   geom_hline(yintercept = 0) + 
   coord_flip() +
-  scale_color_manual(values = func_colors) +  # Use custom colors here
+  scale_color_manual(values = gift_colors) +  # Use custom colors here
   theme(
     axis.text = element_text(size = 8, face = "italic"),
     axis.title = element_text(size = 12),
@@ -393,10 +568,38 @@ for(i in colNames){
 print(plt)
 }
 ```
+Significant Functional:
+```{r}
+sig_function <- significant_functional_ordered %>% 
+  select(trait) %>% 
+  pull()
 
+GIFTs_functions_community %>% 
+  as.data.frame() %>% 
+  select(any_of(sig_function)) %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata[c(1,4)], by=join_by(sample==sample)) %>% 
+  select(-sample) %>% 
+  pivot_longer(!region, names_to="trait",values_to="gift") %>% 
+  left_join(significant_functional_ordered, by=join_by(trait==trait)) %>% 
+  ggplot(aes(x=region, y=gift, color=region)) +
+  geom_jitter(width = 0.2, show.legend = FALSE) +
+  geom_boxplot(width = 0.5, alpha=0.5,outlier.shape = NA, show.legend = FALSE) +
+scale_color_manual(values=c("#e5bd5b", "#6b7398"))+
+    scale_fill_manual(values=c("#e5bd5b", "#6b7398"))+
+  scale_x_discrete(labels=c("Daneborg" = "Daneborg", "Ittoqqortoormiit" = "Ittoqqortoormiit")) +
+facet_grid(.~Function,  scales="free_x")+
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.text = element_text(size=10, angle = 45, hjust = 1),
+    axis.title.y = element_text(margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.x = element_text(margin = margin(t = 20, r = 0, b = 0, l = 0))
+    )
+```
 ### Community domains differences
-
-***No differences***
 
 ```{r comunity_dom, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 domain_gift <- GIFTs_domains_community %>% 
@@ -468,9 +671,10 @@ print(plt)
 }
 ```
 
-
+# ############################################################### # ############################################################### # ###############################################################
 # DO NOT USE ANYTHING BELOW THIS LINE AS OF 08/12/2024!!!!!!
-## ANCOM-BC2
+# ############################################################### # ############################################################### # ###############################################################
+## ANCOM-BC2 (DO NOT USE)
 
 ### Element level
 ```{r phyloseq, comment="", echo=FALSE, message=FALSE, warning=FALSE}
