@@ -6,7 +6,7 @@ load("data/data.Rdata")
 
 ## Taxonomy overview 
 
-### Stacked barplot
+### Phylum
 
 ```{r taxonomy_barplot, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
 genome_metadata<- genome_metadata%>%
@@ -32,7 +32,7 @@ genome_counts_filt %>%
    labs(fill="Phylum",y = "Relative abundance",x="Samples")
 ```
 
-### Phylum relative abundances
+#### Relative abundances
 
 ```{r taxonomy_phylum_summary, warning=FALSE, comments="", message=FALSE}
 phylum_summary <- genome_counts_filt %>%
@@ -40,71 +40,24 @@ phylum_summary <- genome_counts_filt %>%
   pivot_longer(-genome, names_to = "sample", values_to = "count") %>%
   left_join(sample_metadata, by = join_by(sample == sample)) %>%
   left_join(genome_metadata, by = join_by(genome == genome)) %>%
-  group_by(sample,phylum) %>%
+  group_by(sample,phylum, region) %>%
   summarise(relabun=sum(count))
 
 phylum_summary %>%
-    group_by(phylum) %>%
-    summarise(mean=mean(relabun, na.rm=T),sd=sd(relabun, na.rm=T)) %>%
-    arrange(-mean) %>%
-    tt()
-```
-
-```{r taxonomy_boxplot_phylum, warning=FALSE, comments="", message=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
-phylum_arrange <- phylum_summary %>%
-    group_by(phylum) %>%
-    summarise(mean=mean(relabun)) %>%
-    arrange(-mean) %>%
-    select(phylum) %>%
-    pull()
-
-phylum_summary %>%
-    filter(phylum %in% phylum_arrange) %>%
-    mutate(phylum=factor(phylum,levels=rev(phylum_arrange))) %>%
-    ggplot(aes(x=relabun, y=phylum, group=phylum, color=phylum)) +
-        scale_color_manual(values=phylum_colors[rev(phylum_arrange)]) +
-        geom_jitter(alpha=0.5) + 
-        theme_minimal() + 
-        theme(legend.position="none") +
-        labs(y="Phylum",x="Relative abundance")
-```
-
-### Phylum percentages by site
-
-Daneborg dogs
-```{r phylum_Danenborg, comment="", echo=FALSE}
-physeq_Daneborg <- subset_samples(physeq_genome, region == "Daneborg")
-physeq_Daneborg <- prune_taxa(taxa_sums(physeq_Daneborg)>0, physeq_Daneborg)
-physeq_Daneborg.phylum <- microbiome::aggregate_taxa(physeq_Daneborg, 'phylum')
-physeq_Daneborg.phylum.rel <-  microbiome::transform(physeq_Daneborg.phylum, "compositional")
-Daneborg.rel <- physeq_Daneborg.phylum.rel@otu_table*100
-means.Daneborg.rel <- as.data.frame(rowMeans(Daneborg.rel))
-sd.Daneborg.rel <- as.data.frame(rowSds(Daneborg.rel, useNames = TRUE))
-summary.phylum.Daneborg <- merge(means.Daneborg.rel, sd.Daneborg.rel, by="row.names")
-colnames(summary.phylum.Daneborg) <- c("Phylum","mean", "sd")
-summary.phylum.Daneborg%>%
-  arrange(-mean)%>%
+  group_by(phylum) %>%
+  summarise(total_mean=mean(relabun*100, na.rm=T),
+              total_sd=sd(relabun*100, na.rm=T),
+              High_mean=mean(relabun[region=="Daneborg"]*100, na.rm=T),
+             High_sd=sd(relabun[region=="Daneborg"]*100, na.rm=T),
+              Low_mean=mean(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T),
+              Low_sd=sd(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T)) %>%
+  mutate(Total=str_c(round(total_mean,3),"±",round(total_sd,3)),
+           Daneborg=str_c(round(High_mean,3),"±",round(High_sd,3)),
+           Ittoqqortoormiit=str_c(round(Low_mean,3),"±",round(Low_sd,3))) %>% 
+  arrange(-total_mean) %>% 
+  dplyr::select(phylum,Total,Daneborg,Ittoqqortoormiit) %>% 
   tt()
 ```
-
-Ittoqqortoormiit dogs
-```{r phylum_itto, comment="", echo=FALSE}
-physeq_itto <- subset_samples(physeq_genome, region == "Ittoqqortoormiit")
-physeq_itto <- prune_taxa(taxa_sums(physeq_itto)>0, physeq_itto)
-physeq_itto.phylum <- microbiome::aggregate_taxa(physeq_itto, 'phylum')
-physeq_itto.phylum.rel <-  microbiome::transform(physeq_itto.phylum, "compositional")
-itto.rel <- physeq_itto.phylum.rel@otu_table*100
-means.itto.rel <- as.data.frame(rowMeans(itto.rel))
-sd.itto.rel <- as.data.frame(rowSds(itto.rel, useNames = TRUE))
-summary.phylum.itto <- merge(means.itto.rel, sd.itto.rel, by="row.names")
-colnames(summary.phylum.itto) <- c("Phylum","mean", "sd")
-summary.phylum.itto%>%
-  arrange(-mean)%>%
-  tt()
-```
-
-
-## Taxonomy boxplot
 
 ### Family
 ```{r taxonomy_family_summary, warning=FALSE, comments="", message=FALSE}
@@ -113,14 +66,23 @@ family_summary <- genome_counts_filt %>%
   pivot_longer(-genome, names_to = "sample", values_to = "count") %>% #reduce to minimum number of columns
   left_join(sample_metadata, by = join_by(sample == sample)) %>% #append sample metadata
   left_join(., genome_metadata, by = join_by(genome == genome)) %>% #append genome metadata
-  group_by(sample,family) %>%
+  group_by(sample,family, region) %>%
   summarise(relabun=sum(count))
 
 family_summary %>%
-    group_by(family) %>%
-    summarise(mean=mean(relabun, na.rm=T),sd=sd(relabun, na.rm=T)) %>%
-    arrange(-mean) %>%
-    tt()
+  group_by(family) %>%
+  summarise(total_mean=mean(relabun*100, na.rm=T),
+              total_sd=sd(relabun*100, na.rm=T),
+              High_mean=mean(relabun[region=="Daneborg"]*100, na.rm=T),
+             High_sd=sd(relabun[region=="Daneborg"]*100, na.rm=T),
+              Low_mean=mean(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T),
+              Low_sd=sd(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T)) %>%
+  mutate(Total=str_c(round(total_mean,3),"±",round(total_sd,3)),
+           Daneborg=str_c(round(High_mean,3),"±",round(High_sd,3)),
+           Ittoqqortoormiit=str_c(round(Low_mean,3),"±",round(Low_sd,3))) %>% 
+  arrange(-total_mean) %>% 
+  dplyr::select(family,Total,Daneborg,Ittoqqortoormiit) %>% 
+  tt()
 ```
 
 
@@ -135,7 +97,6 @@ family_arrange <- family_summary %>%
 # Per region
 family_summary %>%
     left_join(genome_metadata %>% select(family,phylum) %>% unique(),by=join_by(family==family)) %>%
-    left_join(sample_metadata,by=join_by(sample==sample)) %>%
     filter(family %in% family_arrange[1:20]) %>%
     mutate(family=factor(family,levels=rev(family_arrange[1:20]))) %>%
     filter(relabun > 0) %>%
@@ -166,8 +127,28 @@ genus_summary_sort <- genus_summary %>%
     summarise(mean=mean(relabun, na.rm=T),sd=sd(relabun, na.rm=T)) %>%
     arrange(-mean) 
 
-genus_summary_sort %>%
-    tt()
+genome_counts_filt %>%
+  mutate_at(vars(-genome),~./sum(.)) %>% #apply TSS nornalisation
+  pivot_longer(-genome, names_to = "sample", values_to = "count") %>% 
+  left_join(sample_metadata, by = join_by(sample == sample)) %>% 
+  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
+  group_by(sample,phylum,genus, region) %>%
+  summarise(relabun=sum(count)) %>%
+  filter(genus != "g__") %>%
+  mutate(genus= sub("^g__", "", genus))%>%
+  group_by(genus) %>%
+  summarise(total_mean=mean(relabun*100, na.rm=T),
+              total_sd=sd(relabun*100, na.rm=T),
+              High_mean=mean(relabun[region=="Daneborg"]*100, na.rm=T),
+             High_sd=sd(relabun[region=="Daneborg"]*100, na.rm=T),
+              Low_mean=mean(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T),
+              Low_sd=sd(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T)) %>%
+  mutate(Total=str_c(round(total_mean,3),"±",round(total_sd,3)),
+           Daneborg=str_c(round(High_mean,3),"±",round(High_sd,3)),
+           Ittoqqortoormiit=str_c(round(Low_mean,3),"±",round(Low_sd,3))) %>% 
+  arrange(-total_mean) %>% 
+  dplyr::select(genus,Total,Daneborg,Ittoqqortoormiit) %>% 
+  tt()
 ```
 
 ```{r taxonomy_jitterplot_genus, fig.height=14, fig.width=10, fig.fullwidth=TRUE}
