@@ -7,7 +7,6 @@ load("data/data.Rdata")
 ## Taxonomy overview 
 
 ### Phylum
-
 ```{r taxonomy_barplot, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
 genome_metadata<- genome_metadata%>%
     mutate(phylum=str_remove_all(phylum, "p__"))
@@ -33,7 +32,6 @@ genome_counts_filt %>%
 ```
 
 #### Relative abundances
-
 ```{r taxonomy_phylum_summary, warning=FALSE, comments="", message=FALSE}
 phylum_summary <- genome_counts_filt %>%
   mutate_at(vars(-genome),~./sum(.)) %>% #apply TSS nornalisation
@@ -85,7 +83,6 @@ family_summary %>%
   tt()
 ```
 
-
 ```{r taxonomy_jitterplot_family, warning=FALSE, comments="", message=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
 family_arrange <- family_summary %>%
     group_by(family) %>%
@@ -108,70 +105,3 @@ family_summary %>%
         labs(y="Family", x="Relative abundance", color="Phylum")
 
 ```
-
-### Genus
-
-```{r taxonomy_genus_summary, warning=FALSE, comments="", message=FALSE}
-genus_summary <- genome_counts_filt %>%
-  mutate_at(vars(-genome),~./sum(.)) %>% #apply TSS nornalisation
-  pivot_longer(-genome, names_to = "sample", values_to = "count") %>% #reduce to minimum number of columns
-  left_join(sample_metadata, by = join_by(sample == sample)) %>% #append sample metadata
-  left_join(genome_metadata, by = join_by(genome == genome)) %>% #append genome metadata
-  group_by(sample,phylum,genus) %>%
-  summarise(relabun=sum(count)) %>%
-  filter(genus != "g__") %>%
-  mutate(genus= sub("^g__", "", genus))
-
-genus_summary_sort <- genus_summary %>%
-    group_by(genus) %>%
-    summarise(mean=mean(relabun, na.rm=T),sd=sd(relabun, na.rm=T)) %>%
-    arrange(-mean) 
-
-genome_counts_filt %>%
-  mutate_at(vars(-genome),~./sum(.)) %>% #apply TSS nornalisation
-  pivot_longer(-genome, names_to = "sample", values_to = "count") %>% 
-  left_join(sample_metadata, by = join_by(sample == sample)) %>% 
-  left_join(genome_metadata, by = join_by(genome == genome)) %>% 
-  group_by(sample,phylum,genus, region) %>%
-  summarise(relabun=sum(count)) %>%
-  filter(genus != "g__") %>%
-  mutate(genus= sub("^g__", "", genus))%>%
-  group_by(genus) %>%
-  summarise(total_mean=mean(relabun*100, na.rm=T),
-              total_sd=sd(relabun*100, na.rm=T),
-              High_mean=mean(relabun[region=="Daneborg"]*100, na.rm=T),
-             High_sd=sd(relabun[region=="Daneborg"]*100, na.rm=T),
-              Low_mean=mean(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T),
-              Low_sd=sd(relabun[region=="Ittoqqortoormiit"]*100, na.rm=T)) %>%
-  mutate(Total=str_c(round(total_mean,3),"±",round(total_sd,3)),
-           Daneborg=str_c(round(High_mean,3),"±",round(High_sd,3)),
-           Ittoqqortoormiit=str_c(round(Low_mean,3),"±",round(Low_sd,3))) %>% 
-  arrange(-total_mean) %>% 
-  dplyr::select(genus,Total,Daneborg,Ittoqqortoormiit) %>% 
-  tt()
-```
-
-```{r taxonomy_jitterplot_genus, fig.height=14, fig.width=10, fig.fullwidth=TRUE}
-genus_arrange <- genus_summary %>%
-    group_by(genus) %>%
-    summarise(mean=sum(relabun)) %>%
-    filter(genus != "g__")%>%
-    arrange(-mean) %>%
-    select(genus) %>%
-    mutate(genus= sub("^g__", "", genus)) %>%
-    pull()
-
-#Per region
-genus_summary %>%
-    left_join(sample_metadata,by=join_by(sample==sample)) %>%
-    mutate(genus=factor(genus, levels=rev(genus_summary_sort %>% pull(genus)))) %>%
-    filter(relabun > 0) %>%
-    ggplot(aes(x=relabun, y=genus, group=genus, color=phylum)) +
-        scale_color_manual(values=phylum_colors) +
-        geom_jitter(alpha=0.5) + 
-        facet_grid(.~region)+
-        theme_minimal() + 
-        labs(y="Family", x="Relative abundance", color="Phylum")
-
-```
-
