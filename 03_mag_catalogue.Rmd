@@ -5,7 +5,6 @@ load("data/data.Rdata")
 ```
 
 ## Genome phylogeny
-
 ```{r genome_phylogeny, message=FALSE, warning=FALSE, fig.height=10, fig.width=10, fig.fullwidth=TRUE}
 # Generate the phylum color heatmap
 phylum_heatmap <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
@@ -23,8 +22,9 @@ circular_tree <- force.ultrametric(genome_tree, method="extend") %>% # extend to
 # Add phylum ring
 circular_tree <- gheatmap(circular_tree, phylum_heatmap, offset=-0.1, width=0.1, colnames=FALSE) +
         scale_fill_manual(values=phylum_colors) +
+        guides(fill=guide_legend(title="Phylum")) +
 #        geom_tiplab2(size=1, hjust=-0.1) +
-        theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0))
+        theme(plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0))
 
 # Flush color scale to enable a new color scheme in the next ring
 circular_tree <- circular_tree + new_scale_fill()
@@ -33,6 +33,7 @@ circular_tree <- circular_tree + new_scale_fill()
 circular_tree <- circular_tree +
         new_scale_fill() +
         scale_fill_gradient(low = "#d1f4ba", high = "#f4baba") +
+        guides(fill=guide_legend(title="Contamination")) +
         geom_fruit(
                 data=genome_metadata,
                 geom=geom_bar,
@@ -60,6 +61,19 @@ circular_tree <-  circular_tree +
         annotate('text', x=3.825, y=0, label='                         Genome size', family='arial', size=3.5)
 
 # note to self: use the number of spaces in label= to shift the y position of the text relative to the rings. 
+
+# Add legends
+circular_tree <- circular_tree + 
+        theme(
+            legend.position = "right",
+            legend.direction = "vertical",
+            legend.box = "vertical" 
+        ) +
+        guides(
+            fill = guide_legend(order = 1), 
+            fill2 = guide_legend(order = 2) 
+        )
+
 #Plot circular tree
 circular_tree %>% open_tree(30) %>% rotate_tree(90)
 ```
