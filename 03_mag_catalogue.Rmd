@@ -61,6 +61,7 @@ circular_tree <-  circular_tree +
 
 # note to self: use the number of spaces in label= to shift the y position of the text relative to the rings. 
 
+
 # Add legends
 circular_tree <- circular_tree + 
         theme(
