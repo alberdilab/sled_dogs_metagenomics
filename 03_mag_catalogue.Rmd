@@ -76,6 +76,7 @@ circular_tree <- circular_tree +
 #Plot circular tree
 circular_tree %>% open_tree(30) %>% rotate_tree(90)
 ```
+
 ## Genome quality
 
 ```{r genome_quality}
