@@ -158,27 +158,24 @@ gift_colors <- read_tsv("data/gift_colors.tsv") %>%
 
 
 ```{r commun_wilcox_elem_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE, eval=FALSE}
-gift_color <- merge(uniqueGIFT,gift_colors, by="Code_function")%>%
-	dplyr::arrange() %>%
-	dplyr::select(Color) %>%
-	pull()
-
 code_function2 %>%
-  ggplot(aes(x=forcats::fct_reorder(Function,Difference), y=Difference, fill=Code_function)) + 
+  left_join(gift_colors, by=join_by(Code_function==Code_function)) %>% 
+  ggplot(aes(x=forcats::fct_reorder(Function.x,Difference), y=Difference, fill=legend)) + 
   geom_col() +
-  scale_fill_manual(values = gift_color) +
+  scale_fill_manual(values = gift_colors$Color, name = "Function")+
   geom_hline(yintercept=0) + 
+      geom_text(aes(10,-0.05), label = "Daneborg", color="black") +
+      geom_text(aes(50,0.07), label = "Ittoqqortoormiit ", color="black") +
   coord_flip()+
   theme(axis.text = element_text(size = 10),
+        panel.spacing = unit(0, "lines"),
         axis.title = element_text(size = 12),
         legend.position = "right", 
-        legend.title = element_blank(),
         panel.background = element_blank(),
           panel.grid.major = element_line(size = 0.15, linetype = 'solid',
                                 colour = "grey"))+
   xlab("Function") + 
   ylab("Mean difference")
-
 ```
 
 ```{r elements_plot, comment="", echo=FALSE, message=FALSE, warning=FALSE}
