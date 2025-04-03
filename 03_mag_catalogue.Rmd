@@ -157,6 +157,24 @@ grid.arrange(grobs = list(genome_completeness,genome_biplot,genome_contamination
 
 ## Functional overview
 
+```{r}
+# Predicted genes
+genome_annotations %>%
+  nrow()
+```
+```{r}
+# Some annotation
+genome_annotations %>%
+  filter(if_any(c(kegg_hit, pfam_hits, cazy_hits), ~ !is.na(.))) %>%
+  nrow()
+```
+```{r}
+# KEGG annotation
+genome_annotations %>%
+  filter(!is.na(kegg_hit)) %>% 
+  nrow()
+```
+
 ```{r function_heatmap, message=FALSE, warning=FALSE, fig.height=10, fig.width=10, fig.fullwidth=TRUE}
 
 # Aggregate basal GIFT into elements
