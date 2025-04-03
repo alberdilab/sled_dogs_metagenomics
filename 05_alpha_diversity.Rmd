@@ -177,11 +177,12 @@ plot3 <- alpha_div %>%
   ggplot(aes(x = region, y = phylogenetic, group = region, color = region, fill = region)) +
   geom_boxplot(width = 0.5, outlier.shape = NA, show.legend = FALSE) +
   geom_jitter(width = 0.2, alpha = 0.5, show.legend = FALSE) +
-   stat_compare_means(label.x = 1.2, 
-                     label.y = 10,
-                    show.legend = FALSE) +
+   stat_compare_means(method = "t.test",
+                      label.x = 1.2, 
+                      label.y = 10,
+                      show.legend = FALSE) +
   annotate(
-    "text", x = 2.3, y = 10.1, # corrected position of * on print figure
+    "text", x = 2.15, y = 10.1, # corrected position of * on print figure
     label = "*", size = 6, fontface = "bold") +
   scale_color_manual(name = "Region",
     values = c("#e5bd5b", "#6b7398")) +
@@ -201,7 +202,6 @@ plot3 <- alpha_div %>%
   guides(colour = guide_legend(override.aes = list(size = 6))) +
   labs(x = NULL, y = "Phylogenetic")
 ```
-
 ```{r alpha_div_func, comment="", echo=FALSE, message=FALSE, warning=FALSE}
 plot4 <- alpha_div %>%
   left_join(., sample_metadata, by = join_by(sample == sample)) %>%
@@ -231,9 +231,9 @@ plot4 <- alpha_div %>%
   guides(colour = guide_legend(override.aes = list(size = 6)))+
   labs(x = NULL, y = "Functional")
 ```
-
+All alpha plots
 ```{r div_plot_together, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=8, fig.width=10, fig.fullwidth=TRUE}
-grid.arrange(arrangeGrob(plot1,plot2,plot3,plot4, ncol = 2)) 
+grid.arrange(arrangeGrob(plot1,plot2,plot3, plot4, ncol = 2)) 
 ```
 Graph w/o functional plot:
 ```{r div_plot_together_no_func, comment="", echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=10, fig.fullwidth=TRUE}
@@ -269,17 +269,6 @@ alpha_div_meta %>%
     W_score = t.test(phylogenetic ~ region, data = ., var.equal = FALSE)$statistic
   ) -> t_test_results_P
 # Results: p= 0.009434883; W = -2.711391	
-
-# Wilcoxon
-alpha_div_meta %>%
-  select(region, sample, phylogenetic) %>%
-  filter(region %in% c("Daneborg", "Ittoqqortoormiit")) %>%
-  group_by(region) %>%
-  summarise(
-    wilcox_p = wilcox.test(phylogenetic ~ region, data = .)$p.value,
-    W_statistic = wilcox.test(phylogenetic ~ region, data = .)$statistic
-  ) -> wilcox_results
-# Results: p= 0.006481063	, W = 247
 ```
 ```{r}
 #Functional
