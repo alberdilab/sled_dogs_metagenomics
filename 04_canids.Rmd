@@ -8,24 +8,26 @@ load("output/alpha_all.RData")
 ```
 
 ## Sample overview
-```{r}
+```{r total, comment="", message=FALSE, warning=FALSE}
 sample_metadata %>% 
   summarise(total_samples=n())
 ```
 
-```{r}
+```{r summary_sam, comment="", message=FALSE, warning=FALSE}
 sample_metadata %>% 
   group_by(dog_type, season) %>% 
-  summarise(n=n())
+  summarise(n=n()) %>% 
+  tt()
 ```
 
 ## Individuals
 
-```{r}
+```{r summary_greenland, comment="", message=FALSE, warning=FALSE}
 sample_metadata  %>% 
   filter(country=="Greenland") %>% 
   group_by(dog_type, season, day) %>% 
-  summarise(n=n())
+  summarise(n=n()) %>% 
+  tt()
 ```
 
 ```{r}
@@ -70,7 +72,7 @@ region_pairs_types <- combn(unique(sample_metadata$dog_type), 2, simplify = FALS
 ## Taxonomy overview 
 
 ### Stacked barplot
-```{r taxonomy_barplot_canids, fig.height=8, fig.width=20, fig.fullwidth=TRUE}
+```{r taxonomy_barplot_canids, fig.height=10, fig.width=20, fig.fullwidth=TRUE}
 genome_counts_filt %>%
   mutate_at(vars(-genome),~./sum(.)) %>% 
   pivot_longer(-genome, names_to = "sample", values_to = "count") %>% 
@@ -209,7 +211,7 @@ phylum_summary <- genome_counts_filt %>%
   summarise(relabun=sum(count))
 ```
 
-#### Origin: Dogs vs Sled dogs vs Wolves
+#### Origin: Companion vs Sled dogs vs Wolves
 ```{r taxonomy_phylum_summary_origin, warning=FALSE, comments="", message=FALSE}
 phylum_summary %>%
   group_by(phylum) %>%
@@ -267,17 +269,20 @@ results <- df %>%
 ```
 ```{r}
 results %>% 
-  filter(contrast=="companion - sled_dog")
+  filter(contrast=="companion - sled_dog")%>% 
+  tt()
 ```
 
 ```{r}
 results %>% 
-  filter(contrast=="companion - wolf")
+  filter(contrast=="companion - wolf")%>% 
+  tt()
 ```
 
 ```{r}
 results %>% 
-  filter(contrast=="sled_dog - wolf")
+  filter(contrast=="sled_dog - wolf")%>% 
+  tt()
 ```
 
 ## Alpha diversity
@@ -414,13 +419,18 @@ alpha_div %>%
   left_join(sample_metadata, by = "sample") %>%
   group_by(metric) %>%
   wilcox_test(value ~ dog_type, p.adjust.method = "BH")%>% 
-  filter(p.adj < 0.05)
+  filter(p.adj < 0.05)%>% 
+  tt()
 ```
 
 ## Gut microbiota composition based on beta diversity
 
 ```{r}
-type_colors <- c('#41B6C0','#E5D388',"#bb6749")
+type_colors <- c(
+  companion = "#41B6C0",
+  sled_dog = "#E5D388",
+  wolf = "#bb6749"
+)
 new_labels <- c(
     "companion" = "Companion dogs",
     "sled_dog" = "Sled dogs",
@@ -430,7 +440,7 @@ new_labels <- c(
 load("output/beta.RData")
 ```
 
-```{r hillpair, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r hillpair, comment="", message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
 hillpair <- function(data,q=c(0,1,2),metric=c("S","C","U","V"),tree,dist,tau,out="dist"){
 
   ###
@@ -583,7 +593,7 @@ save(beta_q0n,
      file = "output/beta.Rdata")
 ```
 
-```{r q1, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+```{r q1, comment="", message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
 # table <- genome_counts_filt %>%
 #   column_to_rownames("genome") %>%
 #   filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
@@ -596,7 +606,7 @@ save(beta_q0n,
 # save(beta_q1n,file="output/beta_q1n.RData")
 ```
 
-```{r}
+```{r clr_q1, comment="", message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
 ### CLR
 # beta_q1n <- genome_counts_filt %>%
 #   column_to_rownames("genome") %>%
@@ -608,7 +618,7 @@ save(beta_q0n,
 #   dist()
 ```
 
-```{r}
+```{r bray_q1, comment="", message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
 ### Bray curtis
 # beta_q1n_bray <- genome_counts_filt %>%
 #   column_to_rownames("genome") %>%
@@ -618,7 +628,7 @@ save(beta_q0n,
 #   vegdist(method = "bray")
 ```
 
-```{r}
+```{r helliq1, comment="", message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
 ## Hellinger
 # mat <- genome_counts_filt %>%
 #   column_to_rownames("genome") %>%
@@ -636,10 +646,12 @@ save(beta_q0n,
 beta_q0n_mat <- as.matrix(beta_q0n$S)
 beta_q0n_filtered <- beta_q0n_mat[rownames(beta_q0n_mat) %in% sample_metadata$sample,
                         colnames(beta_q0n_mat) %in% sample_metadata$sample]
+
 beta_q0n_dis <- as.dist(beta_q0n_filtered)
 
-sample_metadata_ordered <- sample_metadata %>% 
-  arrange(match(sample,labels(beta_q0n_dis))) %>% 
+sample_metadata_ordered <- sample_metadata %>%
+  filter(sample %in% labels(beta_q0n_dis)) %>%
+  arrange(match(sample, labels(beta_q0n_dis))) %>%
   column_to_rownames(., "sample")
 
 betadisper(beta_q0n_dis, sample_metadata_ordered$locality) %>% permutest(., pairwise = TRUE) 
@@ -667,7 +679,7 @@ adonis2(beta_q0n_dis ~ dog_type,
 ***Locality***
 
 Significant
-```{r}
+```{r par_q0, comment="", message=FALSE, warning=FALSE}
 pair_results <- pairwise.adonis(beta_q0n_dis, sample_metadata_ordered$locality, perm = 999)
 pair_results %>%
   filter(p.adjusted < 0.05)
@@ -676,7 +688,8 @@ pair_results %>%
 No significant
 ```{r}
 pair_results %>% 
-  filter(p.adjusted>0.05)
+  filter(p.adjusted>0.05) %>% 
+  tt()
 ```
 
 ***Dog group***
@@ -684,13 +697,15 @@ pair_results %>%
 Significant
 ```{r}
 pairwise.adonis(beta_q0n_dis, sample_metadata_ordered$dog_type, perm = 999) %>%
-  filter(p.adjusted < 0.05)
+  filter(p.adjusted < 0.05) %>% 
+  tt()
 ```
 
 No significant
 ```{r}
 pairwise.adonis(beta_q0n_dis, sample_metadata_ordered$dog_type, perm = 999) %>% 
-  filter(p.adjusted>0.05)
+  filter(p.adjusted>0.05) %>% 
+  tt()
 ```
 
 Centroids
@@ -704,10 +719,12 @@ dist_centroids <- dist(betadisper_obj$centroids)
 beta_q1n_mat <- as.matrix(beta_q1n$S)
 beta_q1n_filtered <- beta_q1n_mat[rownames(beta_q1n_mat) %in% sample_metadata$sample,
                         colnames(beta_q1n_mat) %in% sample_metadata$sample]
+
 beta_q1n_dis <- as.dist(beta_q1n_filtered)
 
-sample_metadata_ordered <- sample_metadata %>% 
-  arrange(match(sample,labels(beta_q1n_dis))) %>% 
+sample_metadata_ordered <- sample_metadata %>%
+  filter(sample %in% labels(beta_q1n_dis)) %>%
+  arrange(match(sample, labels(beta_q1n_dis))) %>%
   column_to_rownames(., "sample")
 
 all(rownames(sample_metadata_ordered) == labels(beta_q1n_dis))
@@ -765,7 +782,7 @@ nmds_beta <- beta_q1n_dis %>%
   mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup()
-save(nmds_beta,file="output/nmds_beta_1206.RData")
+save(nmds_beta,file="output/nmds_beta.RData")
 
 nmds_beta_country <- beta_q1n_dis %>%
   vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
@@ -776,7 +793,7 @@ nmds_beta_country <- beta_q1n_dis %>%
   mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
   mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
   ungroup()
-save(nmds_beta_country,file="output/nmds_beta_country_1206.RData")
+save(nmds_beta_country,file="output/nmds_beta_country.RData")
 ```
 
 ```{r nmds_plot_type, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=12, fig.fullwidth=TRUE}
@@ -933,7 +950,8 @@ ggplot(dist_loc_df, aes(x = group1, y = group2, fill = distance)) +
   ungroup() %>%
   distinct(pair, .keep_all = TRUE) %>%
   select(-pair) %>% 
-  arrange(distance)
+  arrange(distance) %>% 
+  tt()
 ```
 
 #### PCoa dog type
@@ -980,7 +998,7 @@ scale_fill_manual(
   theme_classic(base_size = 14)
 ```
 
-Show samples closest to domestic dogs
+Show samples closest to companion dogs
 ```{r pcoa_neutral_type_sample, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
 domestic_centroid <- centroids %>% filter(dog_type == "companion")
 sled_centroid <- centroids %>% filter(dog_type == "sled_dog")
@@ -1145,7 +1163,7 @@ save(results_types,
      file = "output/ancombc_phylum_sled_companion_wolf.Rdata")
 ```
 
-#### Domestic vs sled_dog
+#### Companion vs sled_dog
 
 **Enriched in companion dogs**
 ```{r}
@@ -1162,7 +1180,8 @@ companion %>%
 ```
 
 ```{r}
-companion
+companion %>% 
+  tt()
 ```
 
 **Enriched in sled dogs**
@@ -1179,7 +1198,8 @@ sled %>%
 ```
 
 ```{r}
-sled
+sled %>% 
+  tt()
 ```
 
 
@@ -1200,7 +1220,8 @@ sled %>%
 ```
 
 ```{r}
-sled
+sled %>% 
+  tt()
 ```
 
 **Enriched in wolves**
@@ -1217,7 +1238,8 @@ wolf %>%
 ```
 
 ```{r}
-wolf
+wolf %>% 
+  tt()
 ```
 
 #### All plots
@@ -1364,25 +1386,28 @@ perc %>%
 companion %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   select(species, genus, family, everything()) %>% 
-  arrange(lfc_dog_typesled_dog)
+  arrange(lfc_dog_typesled_dog) %>% 
+  tt()
 ```
 
-```{r}
+```{r wolf_sum, comment="", message=FALSE, warning=FALSE}
 companion %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
   select(species, genus, family, phylum, everything()) %>% 
   filter(species=="") %>% 
   group_by(phylum, family, genus) %>% 
   summarise(count=n()) %>% 
-  arrange(-count)
+  arrange(-count) %>% 
+  tt()
 ```
 
-```{r}
+```{r comp_sumq1, comment="", message=FALSE, warning=FALSE}
 companion %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus, species) %>% 
   summarise(Mags=n()) %>% 
-  arrange(-Mags)
+  arrange(-Mags) %>% 
+  tt()
 ```
 
 **Enriched in sled dogs**
@@ -1420,18 +1445,20 @@ perc %>%
 ```{r}
 sled %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
-  select(species, genus, family, everything())
+  select(species, genus, family, everything()) %>% 
+  tt()
 ```
-```{r}
+```{r sle_phf_sumq1, comment="", message=FALSE, warning=FALSE}
 sled %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
   select(species, genus, family, phylum, everything()) %>% 
   filter(species=="") %>% 
   group_by(phylum, family, genus) %>% 
   summarise(count=n()) %>% 
-  arrange(-count)
+  arrange(-count) %>% 
+  tt()
 ```
-```{r}
+```{r slef_mag_sumq1, comment="", message=FALSE, warning=FALSE}
 sled %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus, species) %>% 
@@ -1486,15 +1513,17 @@ perc %>%
 ```{r}
 sled %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
-  select(species, family, everything())
+  select(species, family, everything()) %>% 
+  tt()
 ```
 
-```{r}
+```{r sled_sumq1, comment="", message=FALSE, warning=FALSE}
 sled %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus) %>% 
   summarise(Mags=n()) %>% 
-  arrange(-Mags)
+  arrange(-Mags) %>% 
+  tt()
 ```
 
 **Enriched in wolves**
@@ -1531,10 +1560,11 @@ perc %>%
 ```{r}
 wolf %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
-  select(species, family, everything())
+  select(species, family, everything()) %>% 
+  tt()
 ```
 
-```{r}
+```{r wolf_sumq1, comment="", message=FALSE, warning=FALSE}
 wolf %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus, species) %>% 
@@ -1545,7 +1575,8 @@ wolf %>%
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus) %>% 
   summarise(Mags=n()) %>% 
-  arrange(-Mags)
+  arrange(-Mags) %>% 
+  tt()
 ```
 
 ### All plots
@@ -1718,7 +1749,8 @@ perc %>%
 ```
 
 ```{r}
-companion
+companion %>% 
+  tt()
 ```
 
 **Enriched in sled dogs**
@@ -1736,7 +1768,8 @@ all %>%
 ```
 
 ```{r}
-sled
+sled %>% 
+  tt()
 ```
 
 
@@ -1772,7 +1805,8 @@ wolf %>%
 ```
 
 ```{r}
-wolf
+wolf %>% 
+  tt()
 ```
 
 
@@ -1985,7 +2019,8 @@ selected_data %>%
   group_by(trait) %>%
   dunn_test(value ~ dog_type, p.adjust.method = "BH") %>% 
   ungroup()%>% 
-  filter(trait=="D0203") 
+  filter(trait=="D0203") %>% 
+  tt()
 ```
 
 Differences between companion dogs and sled dogs
@@ -2054,10 +2089,11 @@ unique_codes <- unique(enrichment_code$Code_function)
 gift_colors <- read_tsv("resources/gift_colors.tsv") %>%
   filter(Code_function %in% unique_codes) %>%
   mutate(legend = str_c(Code_function, " - ", Function))
+
 gift_color_values <- setNames(gift_colors$Color, gift_colors$legend)
 ```
 
-```{r final_plot_sled_dom, comment="", message=FALSE, warning=FALSE, fig.height=12, fig.width=12, fig.fullwidth=TRUE}
+```{r final_plot_sled_dom, comment="", message=FALSE, warning=FALSE, fig.height=18, fig.width=12, fig.fullwidth=TRUE}
 enrichment_code %>%
   left_join(
     gift_colors %>% select(Code_function, Color, legend),
@@ -2069,7 +2105,7 @@ enrichment_code %>%
   geom_hline(yintercept = 0) +
   coord_flip() +
   geom_text(aes(75, 0.040), label = "Enriched in\n sled dogs", color = "#666666") +
-  geom_text(aes(11, -0.09), label = "Enriched in\n companion dogs ", color = "#666666") +
+  geom_text(aes(11, -0.09), label = "Enriched in\n companion dogs", color = "#666666") +
   theme(
     axis.text = element_text(size = 8),
     axis.title = element_text(size = 12),
@@ -2099,7 +2135,8 @@ enrichment_code %>%
   full_join(sled_enr, by = "Function.y") %>%
   arrange(-Sled) %>%
   mutate(across(everything(), ~ ifelse(is.na(.), 0, .))) %>%
-  mutate(difference = Companion - Sled)
+  mutate(difference = Companion - Sled) %>% 
+  tt()
 ```
 
 Differences between sled dogs and wolves
@@ -2119,7 +2156,7 @@ plot_data <- element_gift %>%
   left_join(., uniqueGIFT_db, by = join_by(trait == Code_element))
 
 plot_data %>%
-  filter(dog_type != "domestic") %>%
+  filter(dog_type != "companion") %>%
   ggplot(., aes(x = dog_type, y = value, fill = dog_type)) +
   geom_boxplot(outlier.shape = NA, alpha = 0.7) +
   geom_jitter(width = 0.2, size = 1, alpha = 0.4) +
@@ -2136,7 +2173,7 @@ enrichment_results <- GIFTs_elements_community %>%
   left_join(sample_metadata %>% select(sample, dog_type), by = "sample") %>%
   pivot_longer(-c(sample, dog_type), names_to = "trait", values_to = "value") %>%
   filter(trait %in% dog_sledwolf$trait) %>%
-  filter(dog_type != "domestic") %>%
+  filter(dog_type != "companion") %>%
   group_by(trait) %>%
   summarise(
     median_sled = median(value[dog_type == "sled_dog"]),
@@ -2275,10 +2312,12 @@ ggplot(plot_data, aes(x = dog_type, y = value, fill = dog_type)) +
   geom_jitter(width = 0.2, size = 1, alpha = 0.4) +
   facet_wrap( ~ Function, scales = "free_y", ncol = 4) +
   theme_minimal(base_size = 16) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.x = element_blank())
 
 plot_data %>%
   group_by(dog_type, Function) %>%
   summarise(mean = mean(value)) %>%
-  pivot_wider(names_from = dog_type, values_from = mean)
+  pivot_wider(names_from = dog_type, values_from = mean) %>% 
+  tt()
 ```

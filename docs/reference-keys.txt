@@ -32,7 +32,7 @@ taxonomy-overview-1
 stacked-barplot
 genus-and-species-annotation
 phylum-relative-abundances
-origin-dogs-vs-sled-dogs-vs-wolves
+origin-companion-vs-sled-dogs-vs-wolves
 alpha-diversity
 gut-microbiota-composition-based-on-beta-diversity
 richness
@@ -42,7 +42,7 @@ pcoa-dog-type
 distance-comparison-test
 differential-abundance-analysis
 phylum-level
-domestic-vs-sled_dog
+companion-vs-sled_dog
 sled-dogs-vs-wolves
 all-plots
 mag-level
