@@ -1,0 +1,849 @@
+```{r load_all_dif, comment="", message=FALSE,warning=FALSE}
+load("data/data.Rdata")
+genome_metadata <- genome_metadata %>% 
+  mutate(phylum = case_when(
+        phylum == "Bacillota_A" ~ "Bacillota",
+        phylum == "Bacillota_C" ~ "Bacillota",
+        phylum == "Bacillota_B" ~ "Bacillota",
+        phylum == "Bacillota_I" ~ "Bacillota",
+        TRUE ~ phylum))
+
+remove_sled <- read_csv("data/sample_metadata.csv") %>% 
+  filter(season=="winter")#63
+
+sample_metadata <- sample_metadata %>%
+  mutate(country = if_else(country == "Shangai domestic dog", "Shangai", country)) %>% 
+  filter(!sample %in% remove_sled$sample) %>%
+  mutate(
+    dog_type = case_when(
+      breed == "Wolf"        ~ "wolf",
+      country == "Greenland" ~ "sled_dog",
+      TRUE                   ~ "domestic"
+    )
+  )
+
+genome_counts_filt <- genome_counts_filt %>%
+  select(one_of(c("genome",sample_metadata$sample)))%>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))
+
+genome_metadata <- genome_metadata %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+genome_tree <- keep.tip(genome_tree, tip=genome_metadata$genome)
+```
+
+```{r zero_phylo1, comment="",  message=FALSE, warning=FALSE}
+#load("data/ancombc_all.Rdata")
+phylo_samples <- sample_metadata %>%
+  column_to_rownames("sample") %>%
+  sample_data()
+phylo_genome <- genome_counts_filt %>%
+  select(one_of(c("genome", rownames(phylo_samples)))) %>%
+  column_to_rownames("genome") %>%
+  otu_table(., taxa_are_rows = TRUE)
+phylo_taxonomy <- genome_metadata %>%
+  filter(genome %in% rownames(phylo_genome)) %>%
+  mutate(genome2 = genome) %>% 
+  column_to_rownames("genome2") %>%
+  dplyr::select(domain, phylum, class, order, family, genus, species, genome) %>% 
+  as.matrix() %>%
+  tax_table()
+
+physeq_genome <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
+region_pairs_country <- combn(unique(sample_metadata$country), 2, simplify = FALSE)
+```
+
+## Phylum
+```{r}
+load(file = "data/ancombc_phylum_sled_dogs_wolf.Rdata")
+```
+
+```{r pair_all_phylum, comment="", message=FALSE,warning=FALSE, eval=FALSE}
+results_species <- lapply(region_pairs_species, function(pair) {
+  subset_idx <- sample_metadata$dog_type %in% pair
+
+   fit <- ancombc2(data = prune_samples(subset_idx, physeq_genome),
+    fix_formula = "dog_type",
+    tax_level = "phylum", 
+    group = "dog_type",
+    global = FALSE,
+    pairwise = FALSE,
+    p_adj_method = "BH",
+    lib_cut = 0,
+    struc_zero = TRUE,
+    alpha = 0.05
+  )
+   # Extract main results table
+  res_table <- fit$res
+
+  # Add comparison label
+  res_table$comparison <- paste(pair, collapse = "_vs_")
+
+  return(res_table)
+})
+names(results_species) <- sapply(region_pairs_species, paste, collapse = "_vs_")
+save(results_species,
+     file = "data/ancombc_phylum_sled_dogs_wolf.Rdata")
+```
+
+
+### Domestic vs sled_dog
+
+**Enriched in domestic dogs**
+```{r}
+domestic <- results_species$domestic_vs_sled_dog %>% 
+  filter(q_dog_typesled_dog < 0.05) %>% 
+  filter(lfc_dog_typesled_dog < 0) %>% 
+  arrange(lfc_dog_typesled_dog)
+```
+
+```{r}
+domestic %>%
+  nrow() %>% 
+  cat()
+```
+
+```{r}
+domestic
+```
+
+**Enriched in sled dogs**
+
+```{r}
+sled <- results_species$domestic_vs_sled_dog %>% 
+  filter(q_dog_typesled_dog < 0.05) %>% 
+  filter(lfc_dog_typesled_dog>0) %>% 
+  arrange(-lfc_dog_typesled_dog)
+```
+
+```{r}
+sled %>%
+  nrow() %>% 
+  cat()
+```
+
+```{r}
+sled
+```
+
+
+### Sled_dog vs wolves
+
+**Enriched in sled dogs**
+```{r}
+sled <- results_species$sled_dog_vs_wolf %>% 
+  filter(q_dog_typewolf < 0.05) %>% 
+  filter(lfc_dog_typewolf < 0) %>% 
+  arrange(lfc_dog_typewolf)
+```
+
+```{r}
+sled %>%
+  nrow() %>% 
+  cat()
+```
+
+```{r}
+sled
+```
+
+**Enriched in wolves**
+
+```{r}
+wolf <- results_species$sled_dog_vs_wolf %>% 
+  filter(q_dog_typewolf < 0.05) %>% 
+  filter(lfc_dog_typewolf > 0) %>% 
+  arrange(-lfc_dog_typewolf)
+```
+
+```{r}
+wolf %>%
+  nrow() %>%
+  cat()
+```
+
+```{r}
+wolf
+```
+
+### Plots
+```{r}
+taxa <- as.data.frame(physeq_genome@tax_table)  %>% 
+  distinct(phylum)
+
+colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
+  mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
+  right_join(taxa, by = join_by(phylum == phylum)) %>%
+  dplyr::select(phylum, colors) %>%
+  mutate(colors = str_c(colors, "80"))  %>% 
+  unique() %>%
+  dplyr::arrange(phylum)
+
+for (name in names(results_species)) {
+
+  parts <- strsplit(name, "_vs_")[[1]]
+  
+  name1 <- parts[1]
+  name2 <- parts[2]
+  
+  title <- paste0("Enriched in ", name1, "  ( − LFC )   vs   ", "Enriched in ", name2, "  ( + LFC )")
+  
+  tab <- results_species[[name]]
+
+  coef <- grep("^lfc_dog_type", colnames(tab), value = TRUE)[1]
+  qcol <- sub("^lfc_", "q_", coef)
+  
+  plot_data <- tab %>%
+    filter(.data[[qcol]] < 0.05) %>%
+    mutate(logFC = .data[[coef]])
+  
+  tax_color <- plot_data %>% 
+    rename(phylum=1) %>% 
+    left_join(., colors_alphabetic, by = "phylum") %>%
+    dplyr::arrange(phylum) %>%
+    dplyr::select(colors) %>%
+    pull()
+
+  p <- ggplot(plot_data, aes(x = reorder(taxon, logFC), y = logFC, fill = taxon)) +
+    geom_col() +
+    scale_fill_manual(values = tax_color) +
+    coord_flip() +
+    theme(
+      panel.background = element_blank(),
+      axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 12),
+      axis.title = element_text(size = 14, face = "bold"),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 12, face = "bold"),
+      legend.position = "right",
+      legend.box = "vertical",
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+    ) +
+    labs(
+      title = title,
+      x = "Phylum",
+      y = "Log-Fold Change",
+      fill = "Phylum"
+    )
+
+  ggsave(paste0("Figures/Fig_phylum_", name, ".png"),
+         plot = p,
+         width = 6,
+         height = 8)
+}
+```
+
+
+
+# Sled dogs vs domestic dogs vs wolves
+
+## MAG level
+```{r load_all, comment="", message=FALSE,warning=FALSE}
+region_pairs_species <- combn(unique(sample_metadata$dog_type), 2, simplify = FALSE)
+load("data/ancombc_pairwise_mag_sled_dogs_sepa.Rdata")
+```
+
+```{r eval=FALSE}
+results_species <- lapply(region_pairs_species, function(pair) {
+  subset_idx <- sample_metadata$dog_type %in% pair
+
+  fit <- ancombc2(data = prune_samples(subset_idx, physeq_genome),
+    fix_formula = "dog_type",
+    group = "dog_type",
+    global = FALSE,
+    pairwise = FALSE,
+    p_adj_method = "BH",
+    lib_cut = 0,
+    struc_zero = TRUE,
+    alpha = 0.05
+  )
+
+  # Extract main results table
+  res_table <- fit$res
+
+  # Add comparison label
+  res_table$comparison <- paste(pair, collapse = "_vs_")
+
+  return(res_table)
+})
+
+# Name each table for clarity
+names(results_species) <- sapply(region_pairs_species, paste, collapse = "_vs_")
+save(results_species,
+     file = "data/ancombc_pairwise_mag_sled_dogs_sepa.Rdata")
+```
+
+
+### domestic_vs_sled_dog
+
+**Total number of enriched MAGs**
+```{r}
+results_species$domestic_vs_sled_dog %>% 
+  filter(q_dog_typesled_dog < 0.05) %>% 
+  nrow
+```
+
+**Enriched in domestic dogs**
+```{r}
+domestic <- results_species$domestic_vs_sled_dog %>% 
+  filter(q_dog_typesled_dog < 0.05) %>% 
+  filter(lfc_dog_typesled_dog < 0) %>% 
+  arrange(lfc_dog_typesled_dog)
+```
+
+```{r}
+all <- domestic %>%
+  nrow()
+all %>% 
+  cat()
+```
+
+how many of the enriched bacteria were not annotated to species
+```{r}
+noanno <- domestic %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(species, family, everything()) %>% 
+  filter(species=="") %>% 
+  nrow()
+noanno %>% 
+  cat()
+```
+
+```{r}
+perc <- 100-(noanno*100/all)
+perc %>% 
+  cat()
+```
+
+```{r}
+domestic %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  select(species, genus, family, everything()) %>% 
+  arrange(lfc_dog_typesled_dog)
+```
+
+```{r}
+domestic %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(species, genus, family, phylum, everything()) %>% 
+  filter(species=="") %>% 
+  group_by(phylum, family, genus) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count)
+```
+```{r}
+domestic %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(genus, family, everything()) %>% 
+  filter(genus=="") 
+```
+
+```{r}
+domestic %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  group_by(family, species) %>% 
+  summarise(Mags=n()) %>% 
+  arrange(-Mags)
+```
+
+```{r}
+domestic %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  group_by(family, genus, species) %>% 
+  summarise(Mags=n()) %>% 
+  arrange(-Mags)
+```
+
+**Enriched in sled dogs**
+
+```{r}
+sled <- results_species$domestic_vs_sled_dog %>% 
+  filter(q_dog_typesled_dog < 0.05) %>% 
+  filter(lfc_dog_typesled_dog>0) %>% 
+  arrange(-lfc_dog_typesled_dog)
+```
+
+```{r}
+all <- sled %>%
+  nrow()
+all %>% 
+  cat()
+```
+
+how many of the enriched bacteria were not annotated to species
+```{r}
+noanno <- sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(species, family, everything()) %>% 
+  filter(species=="") %>% 
+  nrow()
+noanno %>% 
+  cat()
+```
+```{r}
+sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(genus, family, everything()) %>% 
+  filter(genus=="") %>% 
+  nrow()
+```
+
+Percentage of bacteria annotated to species level
+```{r}
+perc <- 100-(noanno*100/all)
+perc %>% 
+  cat()
+```
+
+```{r}
+sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  select(species, genus, family, everything())
+```
+```{r}
+sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(species, genus, family, phylum, everything()) %>% 
+  filter(species=="") %>% 
+  group_by(phylum, family, genus) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count)
+```
+```{r}
+sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  group_by(family, genus, species) %>% 
+  summarise(Mags=n()) %>% 
+  arrange(-Mags)
+
+sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  group_by(family, genus) %>% 
+  summarise(Mags=n()) %>% 
+  arrange(-Mags)
+```
+
+
+```{r}
+sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(genus, family, everything()) %>% 
+  filter(genus=="") 
+```
+
+### sled_dog vs wolves
+
+**Total number of enriched MAGs**
+```{r}
+results_species$sled_dog_vs_wolf %>% 
+  filter(q_dog_typewolf < 0.05) %>% 
+  nrow
+```
+
+**Enriched in sled dogs**
+```{r}
+sled <- results_species$sled_dog_vs_wolf %>% 
+  filter(q_dog_typewolf < 0.05) %>% 
+  filter(lfc_dog_typewolf < 0) %>% 
+  arrange(lfc_dog_typewolf)
+```
+
+```{r}
+all <- sled %>%
+  nrow()
+all %>% 
+  cat()
+```
+
+how many of the enriched bacteria were not annotated to species
+```{r}
+noanno <- sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(species, family, everything()) %>% 
+  filter(species=="") %>% 
+  nrow()
+noanno %>% 
+  cat()
+```
+```{r}
+perc <- noanno*100/all 
+perc %>% 
+  cat()
+```
+
+```{r}
+sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  select(species, family, everything())
+```
+
+```{r}
+sled %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  group_by(family, genus) %>% 
+  summarise(Mags=n()) %>% 
+  arrange(-Mags)
+```
+
+**Enriched in wolves**
+
+```{r}
+wolf <- results_species$sled_dog_vs_wolf %>% 
+  filter(q_dog_typewolf < 0.05) %>% 
+  filter(lfc_dog_typewolf > 0) %>% 
+  arrange(-lfc_dog_typewolf)
+```
+
+```{r}
+all <- wolf %>%
+  nrow()
+all %>% 
+  cat()
+```
+
+how many of the enriched bacteria were not annotated to species
+```{r}
+noanno <- wolf %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(species, family, everything()) %>% 
+  filter(species=="") %>% 
+  nrow()
+noanno %>% 
+  cat()
+```
+
+```{r}
+perc <- noanno*100/all 
+perc %>% 
+  cat()
+```
+
+```{r}
+wolf %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  select(species, family, everything())
+```
+
+```{r}
+wolf %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  group_by(family, genus, species) %>% 
+  summarise(Mags=n()) %>% 
+  arrange(-Mags)
+
+wolf %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
+  group_by(family, genus) %>% 
+  summarise(Mags=n()) %>% 
+  arrange(-Mags)
+```
+
+### Plots
+```{r}
+taxonomy <- data.frame(physeq_genome@tax_table) %>%
+  distinct(phylum) %>% 
+  rownames_to_column(., "taxon")
+
+colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
+  mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
+  right_join(taxonomy, by = join_by(phylum == phylum)) %>%
+  dplyr::select(phylum, colors) %>%
+  mutate(colors = str_c(colors, "80"))  %>% 
+  unique() %>%
+  dplyr::arrange(phylum)
+
+for (name in names(results_species)) {
+
+  parts <- strsplit(name, "_vs_")[[1]]
+  
+  name1 <- parts[1]
+  name2 <- parts[2]
+  
+  title <- paste0("Enriched in ", name1, "  ( − LFC )   vs   ", "Enriched in ", name2, "  ( + LFC )")
+  
+  tab <- results_species[[name]]
+
+  coef <- grep("^lfc_dog_type", colnames(tab), value = TRUE)[1]
+  qcol <- sub("^lfc_", "q_", coef)
+  
+  plot_data <- tab %>%
+    filter(.data[[qcol]] < 0.05) %>%
+    mutate(logFC = .data[[coef]]) %>% 
+    left_join(genome_metadata, by=join_by("taxon"=="genome"))
+  
+  tax_color <- plot_data %>% 
+    distinct(phylum) %>% 
+    left_join(., colors_alphabetic, by = "phylum") %>%
+    dplyr::arrange(phylum) %>%
+    dplyr::select(colors) %>%
+    pull()
+
+  p <- ggplot(plot_data, aes(x = reorder(taxon, logFC), y = logFC, fill = phylum)) +
+    geom_col() +
+    scale_fill_manual(values = tax_color) +
+    coord_flip() +
+    theme(
+      panel.background = element_blank(),
+      axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 6),
+      axis.title = element_text(size = 14, face = "bold"),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 14, face = "bold"),
+      legend.position = "right",
+      legend.box = "vertical",
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+    ) +
+    labs(
+      title = title,
+      x = "MAGs",
+      y = "Log-Fold Change",
+      fill = "Phylum"
+    )
+
+  ggsave(paste0("Figures/Fig_mag_", name, ".png"),
+         plot = p,
+         width = 10,
+         height = 25)
+}
+```
+
+## Species level
+```{r}
+genome_tax <- genome_metadata %>%
+  mutate(
+    class  = if_else(is.na(class), paste0(phylum, "_Unclassified"), class),
+    order  = if_else(is.na(order),
+                     if_else(str_detect(class, "Unclassified"), class, paste0(class, "_Unclassified")),
+                     order),
+    family = if_else(is.na(family),
+                     if_else(str_detect(order, "Unclassified"), order, paste0(order, "_Unclassified")),
+                     family),
+    genus  = if_else(genus=="",
+                     if_else(str_detect(family, "Unclassified"), family, paste0(family, "_Unclassified")),
+                     genus),
+    species  = if_else(species=="",
+                     if_else(str_detect(genus, "Unclassified"), genus, paste0(genus, "_Unclassified")),
+                     species)
+  )
+```
+
+```{r}
+phylo_samples <- sample_metadata %>%
+  column_to_rownames("sample") %>%
+  sample_data()
+
+phylo_genome <- genome_counts_filt %>% 
+  select(one_of(c("genome", rownames(phylo_samples)))) %>%
+  left_join(genome_tax[c(1,3,4,6,7,8)], by = "genome") %>% 
+  select(-genome) %>%
+  group_by(phylum, class, family, genus, species) %>%
+  summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE)), .groups = "drop")%>% 
+  as.data.frame() %>% 
+  select(-c(phylum,class, family, genus))%>%
+  column_to_rownames("species") %>%
+  otu_table(., taxa_are_rows = TRUE)
+
+physeq_genome_sp <- phyloseq(phylo_genome, phylo_samples)
+region_pairs_species <- combn(unique(sample_metadata$dog_type), 2, simplify = FALSE)
+load(file = "data/ancombc_species_sled_dogs_wolf.Rdata")
+```
+
+```{r pair_all_dogtype, comment="", message=FALSE,warning=FALSE, eval=FALSE}
+results_species <- lapply(region_pairs_species, function(pair) {
+  subset_idx <- sample_metadata$dog_type %in% pair
+
+   fit <- ancombc2(data = prune_samples(subset_idx, physeq_genome_sp),
+    fix_formula = "dog_type",
+    group = "dog_type",
+    global = FALSE,
+    pairwise = FALSE,
+    p_adj_method = "BH",
+    lib_cut = 0,
+    struc_zero = TRUE,
+    alpha = 0.05
+  )
+   # Extract main results table
+  res_table <- fit$res
+
+  # Add comparison label
+  res_table$comparison <- paste(pair, collapse = "_vs_")
+
+  return(res_table)
+})
+names(results_species) <- sapply(region_pairs_species, paste, collapse = "_vs_")
+ save(results_species,
+     file = "data/ancombc_species_sled_dogs_wolf.Rdata")
+```
+
+### domestic_vs_sled_dog
+
+**Enriched in domestic dogs**
+```{r}
+domestic <- results_species$domestic_vs_sled_dog %>% 
+  filter(q_dog_typesled_dog < 0.05) %>% 
+  filter(lfc_dog_typesled_dog < 0) %>% 
+  arrange(lfc_dog_typesled_dog)
+```
+
+```{r}
+all <- domestic %>%
+  nrow()
+all %>% 
+  cat()
+```
+
+how many of the enriched bacteria were not annotated to species
+```{r}
+noanno <- domestic %>% 
+  left_join(genome_metadata, by=join_by("taxon"=="genome")) %>% 
+  select(species, family, everything()) %>% 
+  filter(species=="") %>% 
+  nrow()
+noanno %>% 
+  cat()
+```
+```{r}
+perc <- noanno*100/all 
+perc %>% 
+  cat()
+```
+
+```{r}
+domestic
+```
+
+
+**Enriched in sled dogs**
+
+```{r}
+sled <- results_species$domestic_vs_sled_dog %>% 
+  filter(q_dog_typesled_dog < 0.05) %>% 
+  filter(lfc_dog_typesled_dog>0) %>% 
+  arrange(-lfc_dog_typesled_dog)
+```
+
+```{r}
+all <- sled %>%
+  nrow()
+all %>% 
+  cat()
+```
+
+```{r}
+sled
+```
+
+
+### sled_dog vs wolves
+
+**Enriched in sled dogs**
+```{r}
+sled <- results_species$sled_dog_vs_wolf %>% 
+  filter(q_dog_typewolf < 0.05) %>% 
+  filter(lfc_dog_typewolf < 0) %>% 
+  arrange(lfc_dog_typewolf)
+```
+
+```{r}
+sled %>%
+  nrow() %>% 
+  cat()
+```
+
+```{r}
+sled
+```
+
+**Enriched in wolves**
+
+```{r}
+wolf <- results_species$sled_dog_vs_wolf %>% 
+  filter(q_dog_typewolf < 0.05) %>% 
+  filter(lfc_dog_typewolf > 0) %>% 
+  arrange(-lfc_dog_typewolf)
+```
+
+```{r}
+wolf %>%
+  nrow() %>%
+  cat()
+```
+
+```{r}
+wolf
+```
+
+## Phylum
+
+```{r}
+phylo_samples <- sample_metadata %>%
+  column_to_rownames("sample") %>%
+  sample_data()
+
+phylo_genome <- genome_counts_filt %>% 
+  select(one_of(c("genome", rownames(phylo_samples)))) %>%
+  left_join(genome_metadata[c(1,3,4,6,8)], by = "genome") %>% 
+  select(-genome) %>%
+  group_by(phylum) %>%
+  summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE)), .groups = "drop")%>% 
+  as.data.frame() %>% 
+  column_to_rownames("phylum") %>%
+  otu_table(., taxa_are_rows = TRUE)
+
+physeq_genome_phylum <- phyloseq(phylo_genome, phylo_samples)
+region_pairs_species <- combn(unique(sample_metadata$dog_type), 2, simplify = FALSE)
+load(file = "data/ancombc_phylum_sled_dogs_wolf.Rdata")
+```
+
+```{r pair_all_type2, comment="", message=FALSE,warning=FALSE, eval=FALSE}
+results_species <- lapply(region_pairs_species, function(pair) {
+  subset_idx <- sample_metadata$dog_type %in% pair
+
+   fit <- ancombc2(data = prune_samples(subset_idx, physeq_genome_phylum),
+    fix_formula = "dog_type",
+    group = "dog_type",
+    global = FALSE,
+    pairwise = FALSE,
+    p_adj_method = "BH",
+    lib_cut = 0,
+    struc_zero = TRUE,
+    alpha = 0.05
+  )
+   # Extract main results table
+  res_table <- fit$res
+
+  # Add comparison label
+  res_table$comparison <- paste(pair, collapse = "_vs_")
+
+  return(res_table)
+})
+names(results_species) <- sapply(region_pairs_species, paste, collapse = "_vs_")
+ save(results_species,
+     file = "data/ancombc_phylum_sled_dogs_wolf.Rdata")
+```
+
+### domestic_vs_sled_dog
+
+**Enriched in domestic dogs**
+```{r}
+domestic <- results_species$domestic_vs_sled_dog %>% 
+  filter(q_dog_typesled_dog < 0.05) %>% 
+  filter(lfc_dog_typesled_dog < 0) %>% 
+  arrange(lfc_dog_typesled_dog)
+```
+
+```{r}
+domestic %>%
+  nrow() %>% 
+  cat()
+```
+
+```{r}
+domestic
+```
+
+

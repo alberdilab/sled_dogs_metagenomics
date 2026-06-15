@@ -1,0 +1,386 @@
+sample,breed,origin,country,locality,dog_type,Pack,Working_status,day,season
+D027,Shiba Inu,Pet store,Shangai,Baoshan District,companion,unknown,unknown,unknown,unknown
+D028,Shiba Inu,From a friend / relative / particular,Shangai,Baoshan District,companion,unknown,unknown,unknown,unknown
+D031,Mixed breed,Rescued animal / Animal shelter,Shangai,Changning District,companion,unknown,unknown,unknown,unknown
+D038,Shiba Inu,Pet store,Shangai,Changning District,companion,unknown,unknown,unknown,unknown
+D045,Corgi,From a friend / relative / particular,Shangai,Changning District,companion,unknown,unknown,unknown,unknown
+D013,Shiba Inu,Pet store,Shangai,Hongkou District,companion,unknown,unknown,unknown,unknown
+D039,Chinese rural dog,Stray animals on the roadside,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D040,Mixed breed,Rescued animal / Animal shelter,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D041,West-Highland-White-Terrier,Stray animals on the roadside,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D042,Mixed breed,Stray animals on the roadside,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D043,Mixed breed,Stray animals on the roadside,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D044,Mixed breed,Stray animals on the roadside,Shangai,JIading District,companion,unknown,unknown,unknown,unknown
+D052,Samoyed,Pet store,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D016,Beagle,Pet store,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D017,English bulldog,Other: Bought in a second-hand app,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D047,Golden retriever,Rescued animal / Animal shelter,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D048,Samoyed,Rescued animal / Animal shelter,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D049,Labrador retriever,Rescued animal / Animal shelter,Shangai,Jiading District,companion,unknown,unknown,unknown,unknown
+D026,Border Collie,Pet store,Shangai,Minhang District,companion,unknown,unknown,unknown,unknown
+D029,Swiss shepherd,Pet store,Shangai,Minhang District,companion,unknown,unknown,unknown,unknown
+D001,Mixed breed,Rescued animal / Animal shelter,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D002,Yorkshire Terrier,Pet store,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D003,Miniature schnauzer,Animal breeder,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D004,Mixed breed,Stray animals on the roadside,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D005,Mixed breed,Stray animals on the roadside,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D006,Schnauzer,Rescued animal / Animal shelter,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D007,Mixed breed,Rescued animal / Animal shelter,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D008,Shiba Inu,Animal breeder,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D010,Shih Tzu,Animal breeder,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D011,Labrador retriever,Animal breeder,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D012,Mixed breed,Rescued animal / Animal shelter,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D015,Border Collie,Rescued animal / Animal shelter,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D018,I don't know,Stray animals on the roadside,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D023,Mixed breed,From a friend / relative / particular,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D050,Poodle or Toy poodle,From a friend / relative / particular,Shangai,Pudong New Area District,companion,unknown,unknown,unknown,unknown
+D019,Shiba Inu,Pet store,Shangai,Putuo District,companion,unknown,unknown,unknown,unknown
+D020,Shiba Inu,Pet store,Shangai,Putuo District,companion,unknown,unknown,unknown,unknown
+D021,Shiba Inu,Pet store,Shangai,Putuo District,companion,unknown,unknown,unknown,unknown
+D022,Poodle or Toy poodle,Rescued animal / Animal shelter,Shangai,Putuo District,companion,unknown,unknown,unknown,unknown
+D024,Poodle or Toy poodle,Rescued animal / Animal shelter,Shangai,Putuo District,companion,unknown,unknown,unknown,unknown
+D051,Corgi,Animal breeder,Shangai,Putuo District,companion,unknown,unknown,unknown,unknown
+D032,Mixed breed,Rescued animal / Animal shelter,Shangai,Qingpu District,companion,unknown,unknown,unknown,unknown
+D033,Bernese Mountain Dog,Pet store,Shangai,Qingpu District,companion,unknown,unknown,unknown,unknown
+D025,Mixed breed,Stray animals on the roadside,Shangai,Songjiang District,companion,unknown,unknown,unknown,unknown
+D035,French Bulldog,Pet store,Shangai,Songjiang District,companion,unknown,unknown,unknown,unknown
+D036,Golden retriever,Pet store,Shangai,Songjiang District,companion,unknown,unknown,unknown,unknown
+D030,Cairn terrier,Animal breeder,Shangai,Xuhui District,companion,unknown,unknown,unknown,unknown
+D034,Yorkshire terrier,Rescued animal / Animal shelter,Shangai,Xuhui District,companion,unknown,unknown,unknown,unknown
+D037,Poodle or Toy poodle,Pet store,Shangai,Xuhui District,companion,unknown,unknown,unknown,unknown
+D046,Chihuahua,Rescued animal / Animal shelter,Shangai,Xuhui District,companion,unknown,unknown,unknown,unknown
+D014,Labrador retriever,From a friend / relative / particular,Shangai,Yangpu District,companion,unknown,unknown,unknown,unknown
+EHI01322,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01288,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01301,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01310,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01329,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01295,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01307,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01286,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01326,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01327,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01298,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01313,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01297,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01318,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01321,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01302,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01294,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01312,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01282,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01324,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01323,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01332,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01283,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01299,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01331,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01316,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01328,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01296,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+EHI01309,Sled dog,Military,Greenland,Daneborg,sled_dog,unknown,unknown,Unknown,summer
+GL_01_02,Sled dog,House,Greenland,Disko,sled_dog,1,Lead,Unknown,summer
+GL_01_04,Sled dog,House,Greenland,Disko,sled_dog,1,Follower,Unknown,summer
+GL_01_05,Sled dog,House,Greenland,Disko,sled_dog,1,Follower,Unknown,summer
+GL_01_06,Sled dog,House,Greenland,Disko,sled_dog,1,Too_young,Unknown,summer
+GL_01_07,Sled dog,House,Greenland,Disko,sled_dog,1,Follower,Unknown,summer
+GL_02_01,Sled dog,House,Greenland,Disko,sled_dog,2,Lead,Unknown,summer
+GL_02_02,Sled dog,House,Greenland,Disko,sled_dog,2,Follower,Unknown,summer
+GL_02_03,Sled dog,House,Greenland,Disko,sled_dog,2,Follower,Unknown,summer
+GL_02_04,Sled dog,House,Greenland,Disko,sled_dog,2,Follower,Unknown,summer
+GL_02_05,Sled dog,House,Greenland,Disko,sled_dog,2,Follower,Unknown,summer
+GL_02_06,Sled dog,House,Greenland,Disko,sled_dog,2,Follower,Unknown,summer
+GL_03_01,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_02,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_03,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_04,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_05,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_06,Sled dog,House,Greenland,Disko,sled_dog,3,Lead,Unknown,summer
+GL_03_07,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_09,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_10,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_11,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_12,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_13,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_03_14,Sled dog,House,Greenland,Disko,sled_dog,3,Follower,Unknown,summer
+GL_04_01,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_04_02,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_04_03,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_04_04,Sled dog,House,Greenland,Disko,sled_dog,4,Lead,Unknown,summer
+GL_04_05,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_04_06,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_04_07,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_04_08,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_04_09,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_04_10,Sled dog,House,Greenland,Disko,sled_dog,4,Follower,Unknown,summer
+GL_05_01,Sled dog,House,Greenland,Disko,sled_dog,5,Too_young,Unknown,summer
+GL_05_03,Sled dog,House,Greenland,Disko,sled_dog,5,Too_young,Unknown,summer
+GL_05_04,Sled dog,House,Greenland,Disko,sled_dog,5,Follower,Unknown,summer
+GL_05_06,Sled dog,House,Greenland,Disko,sled_dog,5,Follower,Unknown,summer
+GL_05_07,Sled dog,House,Greenland,Disko,sled_dog,5,Follower,Unknown,summer
+GL_05_09,Sled dog,House,Greenland,Disko,sled_dog,5,Follower,Unknown,summer
+GL_05_10,Sled dog,House,Greenland,Disko,sled_dog,5,Follower,Unknown,summer
+GL_05_11,Sled dog,House,Greenland,Disko,sled_dog,5,Follower,Unknown,summer
+GL_05_12,Sled dog,House,Greenland,Disko,sled_dog,5,Lead,Unknown,summer
+GL_06_01,Sled dog,House,Greenland,Disko,sled_dog,6,Lead,Unknown,summer
+GL_06_02,Sled dog,House,Greenland,Disko,sled_dog,6,Follower,Unknown,summer
+GL_06_03,Sled dog,House,Greenland,Disko,sled_dog,6,Follower,Unknown,summer
+GL_06_04,Sled dog,House,Greenland,Disko,sled_dog,6,Follower,Unknown,summer
+GL_06_05,Sled dog,House,Greenland,Disko,sled_dog,6,Follower,Unknown,summer
+GL_06_06,Sled dog,House,Greenland,Disko,sled_dog,6,Follower,Unknown,summer
+GL_07_01,Sled dog,House,Greenland,Illulissat,sled_dog,7,Follower,Unknown,summer
+GL_07_02,Sled dog,House,Greenland,Illulissat,sled_dog,7,Follower,Unknown,summer
+GL_07_03,Sled dog,House,Greenland,Illulissat,sled_dog,7,Follower,Unknown,summer
+GL_07_04,Sled dog,House,Greenland,Illulissat,sled_dog,7,Lead,Unknown,summer
+GL_07_05,Sled dog,House,Greenland,Illulissat,sled_dog,7,Too_young,Unknown,summer
+GL_07_06,Sled dog,House,Greenland,Illulissat,sled_dog,7,Follower,Unknown,summer
+GL_07_07,Sled dog,House,Greenland,Illulissat,sled_dog,7,Too_young,Unknown,summer
+GL_07_08,Sled dog,House,Greenland,Illulissat,sled_dog,7,Follower,Unknown,summer
+GL_07_09,Sled dog,House,Greenland,Illulissat,sled_dog,7,Follower,Unknown,summer
+GL_07_10,Sled dog,House,Greenland,Illulissat,sled_dog,7,Follower,Unknown,summer
+GL_07_11,Sled dog,House,Greenland,Illulissat,sled_dog,7,Follower,Unknown,summer
+GL_07_12,Sled dog,House,Greenland,Illulissat,sled_dog,7,Next_in_line,Unknown,summer
+GL_08_01,Sled dog,House,Greenland,Illulissat,sled_dog,8,Next_in_line,Unknown,summer
+GL_08_02,Sled dog,House,Greenland,Illulissat,sled_dog,8,Follower,Unknown,summer
+GL_08_03,Sled dog,House,Greenland,Illulissat,sled_dog,8,Follower,Unknown,summer
+GL_08_04,Sled dog,House,Greenland,Illulissat,sled_dog,8,Follower,Unknown,summer
+GL_08_05,Sled dog,House,Greenland,Illulissat,sled_dog,8,Follower,Unknown,summer
+GL_08_06,Sled dog,House,Greenland,Illulissat,sled_dog,8,Follower,Unknown,summer
+GL_08_07,Sled dog,House,Greenland,Illulissat,sled_dog,8,Follower,Unknown,summer
+GL_08_08,Sled dog,House,Greenland,Illulissat,sled_dog,8,Follower,Unknown,summer
+GL_08_10,Sled dog,House,Greenland,Illulissat,sled_dog,8,Next_in_line,Unknown,summer
+GL_08_11,Sled dog,House,Greenland,Illulissat,sled_dog,8,Follower,Unknown,summer
+GL_08_12,Sled dog,House,Greenland,Illulissat,sled_dog,8,Lead,Unknown,summer
+SRR14842364,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842404,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842381,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842369,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842365,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842362,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842360,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842401,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842399,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842398,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842397,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842395,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842384,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842393,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842383,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842333,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842375,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842392,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842376,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842388,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842372,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842366,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842377,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842390,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842387,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842386,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842373,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842380,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842394,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842391,unknown,Street,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842378,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842368,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842371,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+SRR14842402,unknown,Shelter,India,India,companion,unknown,unknown,Unknown,Unknown
+EHI01305,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01281,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01320,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01311,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01306,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01280,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01385,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01289,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01325,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01304,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01381,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01330,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01383,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01285,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01291,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01293,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01303,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01292,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01308,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01284,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01300,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01384,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01287,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01382,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01314,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01317,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01315,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01319,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI01290,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,Unknown,summer
+EHI03368,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03344,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03355,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03357,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03387,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_5,winter
+EHI03376,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03363,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03386,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03391,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03390,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_5,winter
+EHI03345,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03356,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03364,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03385,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03366,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_5,winter
+EHI03389,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03382,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03372,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03377,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03335,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_5,winter
+EHI03341,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_6,winter
+EHI03378,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_7,winter
+EHI03395,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03354,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03338,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03365,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03392,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_5,winter
+EHI03342,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03360,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03388,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03351,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03370,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03379,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03346,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03343,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03380,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_5,winter
+EHI03358,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03359,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03367,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03362,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03340,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_5,winter
+EHI03371,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03375,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03336,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03396,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03350,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03353,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03349,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03383,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03347,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03373,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03352,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03397,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03361,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03374,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03337,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03339,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_4,winter
+EHI03369,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03394,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03393,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+EHI03348,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_1,winter
+EHI03384,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_2,winter
+EHI03381,Sled dog,House,Greenland,Ittoqqortoormiit,sled_dog,unknown,unknown,day_3,winter
+SRR14842335,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842325,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842324,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842340,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842352,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842424,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842341,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842415,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842346,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842344,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842426,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842385,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842407,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842374,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842337,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842328,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842347,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842396,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842342,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842338,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842334,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842363,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842336,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842348,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842351,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842327,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842350,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR14842345,unknown,Unknown,Laos,Laos,companion,unknown,unknown,Unknown,Unknown
+SRR21169626,Wolf,Captivity,Mongolia,Mongolia,wolf,unknown,unknown,Unknown,Unknown
+SRR21169625,Wolf,Captivity,Mongolia,Mongolia,wolf,unknown,unknown,Unknown,Unknown
+SRR21169624,Wolf,Captivity,Mongolia,Mongolia,wolf,unknown,unknown,Unknown,Unknown
+SRR21169623,Wolf,Captivity,Mongolia,Mongolia,wolf,unknown,unknown,Unknown,Unknown
+SRR21169622,Unknown,House,Mongolia,Mongolia,companion,unknown,unknown,Unknown,Unknown
+SRR21169621,Unknown,House,Mongolia,Mongolia,companion,unknown,unknown,Unknown,Unknown
+SRR21169620,Unknown,House,Mongolia,Mongolia,companion,unknown,unknown,Unknown,Unknown
+SRR21169628,Unknown,House,Mongolia,Mongolia,companion,unknown,unknown,Unknown,Unknown
+SRR21169630,Wolf,Wild,Mongolia,Mongolia,wolf,unknown,unknown,Unknown,Unknown
+SRR21169629,Wolf,Wild,Mongolia,Mongolia,wolf,unknown,unknown,Unknown,Unknown
+SRR21169627,Wolf,Wild,Mongolia,Mongolia,wolf,unknown,unknown,Unknown,Unknown
+SRR14842322,Jack Russel Terrier,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842356,Jack Russel Terrier,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842422,Jack Russel Terrier,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842358,Bull Terrier,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842357,Dachsund,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842343,Yorkshire Terrier,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842320,Belgian Shephard,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842354,Jack Russel mixed,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842420,Border Collie,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842323,Schnauzer,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842418,Labrador,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842379,Africanis,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842412,Africanis,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842353,Stafordshire Terrier,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842419,Labrador,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842367,Labrador,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842355,Labrador,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842332,Yorkshire Terrier,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR14842359,Dachsund,Unknown,South Africa,South Africa,companion,unknown,unknown,Unknown,Unknown
+SRR23153058,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153021,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153032,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23152947,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153161,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153121,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23152958,Mixed,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23152980,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153001,Mixed,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153159,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153160,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153067,Mixed,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153012,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23152936,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913920,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1914112,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915144,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915624,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915792,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1914160,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915456,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1914448,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913680,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1914136,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915264,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1916080,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915888,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913896,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153148,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915864,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913344,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915720,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1914256,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915648,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913488,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913440,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1914376,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915672,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913584,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913992,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1916008,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1915840,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1916320,Labrador,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1913872,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1914904,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+ERR1914232,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23152969,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153078,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown
+SRR23153089,Beagle,Laboratory,USA,USA,companion,unknown,unknown,Unknown,Unknown

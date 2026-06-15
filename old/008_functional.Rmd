@@ -1,0 +1,710 @@
+## Functional differences
+
+```{r load_data_func, comment="", message=FALSE, warning=FALSE}
+load("data/data.Rdata")
+load("data/genome_gifts_corrected.Rdata")
+genome_metadata <- genome_metadata %>% 
+  mutate(phylum = case_when(
+        phylum == "Bacillota_A" ~ "Bacillota",
+        phylum == "Bacillota_C" ~ "Bacillota",
+        phylum == "Bacillota_B" ~ "Bacillota",
+        phylum == "Bacillota_I" ~ "Bacillota",
+        TRUE ~ phylum))
+
+load("data/beta.Rdata")
+
+remove_sled <- read_csv("data/sample_metadata.csv") %>% 
+  filter(season=="winter")
+
+sample_metadata <- sample_metadata %>%
+  mutate(country = if_else(country == "Shangai domestic dog", "Shangai", country)) %>% 
+  filter(!sample %in% remove_sled$sample) %>%
+  mutate(
+    dog_type = case_when(
+      breed == "Wolf"        ~ "wolf",
+      country == "Greenland" ~ "sled_dog",
+      TRUE                   ~ "domestic"
+    )
+  )
+
+genome_counts_filt <- genome_counts_filt %>%
+  select(one_of(c("genome",sample_metadata$sample)))%>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))
+
+genome_metadata <- genome_metadata %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+genome_tree <- keep.tip(genome_tree, tip=genome_metadata$genome)
+```
+```{r gift_analysis_func_all, comment="", message=FALSE, warning=FALSE}
+genome_counts_filt <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts),]
+genome_counts_filt <- genome_counts_filt %>%
+    select(genome, all_of(sample_metadata$sample)) %>%
+  column_to_rownames(., "genome") %>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))%>%
+  rownames_to_column(., "genome")
+
+genome_gifts <- genome_gifts[rownames(genome_gifts) %in% genome_counts_filt$genome,]
+genome_gifts <- genome_gifts[, colSums(genome_gifts != 0) > 0]
+
+#Aggregate bundle-level GIFTs into the compound level
+GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
+GIFTs_elements_filtered <- GIFTs_elements[rownames(GIFTs_elements) %in% genome_counts_filt$genome,]
+GIFTs_elements_filtered <- as.data.frame(GIFTs_elements_filtered) %>% 
+  select_if(~ !is.numeric(.) || sum(.) != 0)
+
+#Aggregate element-level GIFTs into the function level
+GIFTs_functions <- to.functions(GIFTs_elements_filtered,GIFT_db)
+
+#Aggregate function-level GIFTs into overall Biosynthesis, Degradation and Structural GIFTs
+GIFTs_domains <- to.domains(GIFTs_functions,GIFT_db)
+
+#Get community-weighed average GIFTs per sample
+genome_counts_row <- genome_counts_filt %>%
+  mutate_at(vars(-genome),~./sum(.)) %>% 
+  column_to_rownames(., "genome") 
+GIFTs_elements_community <- to.community(GIFTs_elements_filtered,genome_counts_row,GIFT_db)
+GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_row,GIFT_db)
+GIFTs_domains_community <- to.community(GIFTs_domains,genome_counts_row,GIFT_db)
+```
+
+
+## MCI
+
+```{r mci_functional_country, echo=TRUE,results=TRUE}
+GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(country) %>%
+  summarise(MCI = mean(value), sd = sd(value)) %>%
+  tt()
+```
+```{r}
+MCI_pf <- GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) 
+
+shapiro.test(residuals(lm(value ~ country, data = MCI_pf))) # normality of residuals
+bartlett.test(value ~ country, data = MCI_pf)  # homogeneity of variance
+
+kruskal.test(value ~ country, data = MCI_pf)
+pw <- pairwise.wilcox.test(
+  x = MCI_pf$value,
+  g = MCI_pf$country,
+  p.adjust.method = "BH"
+)
+
+pw$p.value %>%
+  as.data.frame() %>%
+  rownames_to_column("group1") %>%
+  pivot_longer(
+    -group1,
+    names_to = "group2",
+    values_to = "p_adjust"
+  ) %>%
+  filter(!is.na(p_adjust)) %>%
+  mutate(
+    comparison = paste(group1, "vs", group2),
+    p_adjust = round(p_adjust, 3),
+    sig = case_when(
+      p_adjust < 0.001 ~ "***",
+      p_adjust < 0.01  ~ "**",
+      p_adjust < 0.05  ~ "*",
+      TRUE ~ ""
+    )
+  ) %>%
+  filter(p_adjust < 0.05) %>%
+  select(comparison, p_adjust, sig) %>%
+  rename("Compared countries" = comparison,
+         "Adjusted p-value" = p_adjust) %>%
+  tt()
+```
+```{r}
+pw$p.value %>%
+  as.data.frame() %>%
+  rownames_to_column("group1") %>%
+  pivot_longer(
+    -group1,
+    names_to = "group2",
+    values_to = "p_adjust"
+  ) %>%
+  filter(!is.na(p_adjust)) %>%
+  mutate(
+    comparison = paste(group1, "vs", group2),
+    p_adjust = round(p_adjust, 3)) %>% 
+  filter(p_adjust > 0.05) %>%
+  select(comparison, p_adjust) %>%
+  rename("Compared countries" = comparison,
+         "Adjusted p-value" = p_adjust) %>%
+  tt()
+```
+
+## Type
+```{r gitfs_functional_type, echo=TRUE,results=TRUE}
+GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(dog_type) %>%
+  summarise(mean = round(mean(value), 3), sd = round(sd(value), 3)) %>%
+  mutate(MCI=str_c(round(mean,3),"±",round(sd,3))) %>% 
+  select(dog_type,MCI) %>%  
+  tt()
+```
+
+```{r}
+MCI_pf <- GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) 
+
+shapiro.test(residuals(lm(value ~ dog_type, data = MCI_pf))) 
+bartlett.test(value ~ dog_type, data = MCI_pf)  
+
+kruskal.test(value ~ dog_type, data = MCI_pf)
+pw <- pairwise.wilcox.test(
+  x = MCI_pf$value,
+  g = MCI_pf$dog_type,
+  p.adjust.method = "BH"
+)
+
+wilcox_tbl <- pw$p.value %>%
+  as.data.frame() %>%
+  rownames_to_column("group1") %>%
+  pivot_longer(
+    -group1,
+    names_to = "group2",
+    values_to = "p_adjust"
+  ) %>%
+  filter(!is.na(p_adjust)) %>%
+  mutate(
+    comparison = paste(group1, "vs", group2),
+    p_adjust = round(p_adjust, 3),
+    sig = case_when(
+      p_adjust < 0.001 ~ "***",
+      p_adjust < 0.01  ~ "**",
+      p_adjust < 0.05  ~ "*",
+      TRUE ~ ""
+    )
+  ) %>%
+  select(comparison, p_adjust, sig)
+
+wilcox_tbl %>%
+  rename("Compared countries" = comparison,
+         "Adjusted p-value" = p_adjust) %>%
+  tt()
+```
+
+## Community elements differences:
+
+Country
+```{r commun_wilcox_elem_country, comment="", message=FALSE, warning=FALSE}
+element_gift <- GIFTs_elements_community %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata %>% select(sample,country), by="sample")
+
+uniqueGIFT_db<- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
+
+significant_elements <- element_gift %>%
+  pivot_longer(-c(sample,country), names_to = "trait", values_to = "value") %>%
+  group_by(trait) %>%
+  summarise(p_value = kruskal.test(value ~ country)$p.value) %>%
+  mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
+  filter(p_adjust < 0.05)%>%
+  rownames_to_column(., "Elements")  %>% 
+  select(-Elements)
+
+selected_data <- element_gift %>%
+  pivot_longer(-c(sample, country), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% significant_elements$trait)
+
+pairwise_results <- selected_data %>%
+  group_by(trait) %>%
+  dunn_test(value ~ country, p.adjust.method = "BH")%>% 
+  filter(p.adj<0.05) %>%
+  mutate(comparison = paste(group1, "vs", group2)) %>% 
+  left_join(., uniqueGIFT_db, by=join_by(trait==Code_element)) %>%
+  filter(group1=="Greenland")
+```
+
+```{r}
+nrow(pairwise_results)
+```
+
+```{r function_plot_country, comment="", message=FALSE, warning=FALSE, fig.height=20, fig.width=10, fig.fullwidth=TRUE}
+ggplot(pairwise_results, aes(x = comparison, y = fct_rev(Function))) +
+  geom_tile(aes(fill = p.adj), color = "white") +
+  geom_text(aes(label = p.adj.signif), size = 4, color = "black") +
+  scale_fill_gradient(low = "#b30000", high = "#fef0d9" , name = "Adjusted p-value") +
+  theme_minimal() +
+  labs(
+    title = "Significant Pairwise Comparisons by Trait",
+    x = "Locality Comparison",
+    y = "Trait"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+```
+```{r barplot_func_wolves_country, comment="", message=FALSE, warning=FALSE, fig.height=60, fig.width=30, fig.fullwidth=TRUE}
+element_gift <- GIFTs_elements_community %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata%>% select(sample,country), by="sample")
+
+plot_data <- element_gift %>%
+  pivot_longer(-c(sample, country), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% pairwise_results$trait) %>%
+  left_join(., uniqueGIFT_db, by=join_by(trait==Code_element)) 
+
+ggplot(plot_data, aes(x = country, y = value, fill = country)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  facet_wrap(~ Function, scales = "free_y", ncol = 4) +
+  theme_minimal(base_size = 16) +
+  labs(
+    title = "Trait Distributions Across Localities",
+    x = "Country",
+    y = "Trait Value" )
+```
+
+Dog type
+
+```{r}
+function_matrix <- GIFTs_functions_community %>%
+  as.data.frame() %>%
+  as.matrix()
+
+metadata <- sample_metadata %>%
+  select(sample, dog_type) %>%
+  column_to_rownames("sample")
+
+metadata <- metadata[rownames(function_matrix), , drop=FALSE]
+stopifnot(all(rownames(function_matrix) %in% rownames(metadata)))
+stopifnot(all(rownames(function_matrix) == rownames(metadata)))
+meta_row <- rownames_to_column(metadata, "sample")
+# bd <- betadisper(function_matrix, meta_row$dog_type)
+# anova(bd)
+adonis2(function_matrix ~ dog_type,
+        data = metadata,
+        method = "euclidean",
+        permutations = 999)
+```
+
+```{r commun_wilcox_elem_type, comment="", message=FALSE, warning=FALSE}
+element_gift <- GIFTs_elements_community %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata %>% select(sample,dog_type), by="sample")
+
+uniqueGIFT_db <- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
+
+significant_elements <- element_gift %>%
+  pivot_longer(-c(sample,dog_type), names_to = "trait", values_to = "value") %>%
+  group_by(trait) %>%
+  summarise(p_value = kruskal.test(value ~ dog_type)$p.value) %>%
+  mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
+  filter(p_adjust < 0.05)%>%
+  rownames_to_column(., "Elements") %>% 
+  select(-Elements)
+
+selected_data <- element_gift %>%
+  pivot_longer(-c(sample, dog_type), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% significant_elements$trait)
+
+pairwise_results <- selected_data %>%
+  group_by(trait) %>%
+  dunn_test(value ~ dog_type, p.adjust.method = "BH")%>% 
+  filter(p.adj<0.05) %>%
+  mutate(comparison = paste(group1, "vs", group2)) %>% 
+  left_join(., uniqueGIFT_db, by=join_by(trait==Code_element))
+
+# pairwise_results %>% 
+#   filter(comparison!="domestic vs wolf") %>% 
+#   distinct(Function)
+# 
+# pairwise_results %>% 
+#   filter(comparison=="domestic vs sled_dog") %>% 
+#   distinct(Function)
+# 
+# pairwise_results %>% 
+#   filter(comparison=="sled_dog vs wolf") %>% 
+#   distinct(Function)
+```
+
+```{r ele_plot_type, comment="", message=FALSE, warning=FALSE, fig.height=20, fig.width=10, fig.fullwidth=TRUE}
+plot_elem <- ggplot(pairwise_results, aes(x = comparison, y = fct_rev(Function))) +
+  geom_tile(aes(fill = p.adj), color = "white") +
+  geom_text(aes(label = p.adj.signif), size = 4, color = "black") +
+  scale_fill_gradient(low = "#b30000", high = "#fef0d9" , name = "Adjusted p-value") +
+  theme_minimal() +
+  labs(
+    title = "Significant Pairwise Comparisons by Trait",
+    x = "Locality Comparison",
+    y = "Trait"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+#ggsave("Figures/plot_element_dog_type.png", plot = plot_elem, width = 10, height = 25, dpi = 300)
+plot_elem
+```
+
+```{r barplot_ele_type2, comment="", message=FALSE, warning=FALSE, fig.height=60, fig.width=30, fig.fullwidth=TRUE}
+element_gift <- GIFTs_elements_community %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata %>%  select(sample,dog_type) %>% filter(), by="sample")
+
+plot_data <- element_gift %>%
+  pivot_longer(-c(sample, dog_type), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% pairwise_results$trait)%>% 
+  left_join(., uniqueGIFT_db, by=join_by(trait==Code_element)) 
+
+plot_data %>% 
+  ggplot(., aes(x = dog_type, y = value, fill = dog_type)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, size = 1, alpha = 0.4) +
+  facet_wrap(~ Function, scales = "free_y", ncol = 4) +
+  theme_minimal() +
+  theme(strip.text = element_text(size = 18))
+  labs(
+    title = "Trait Distributions Across Localities",
+    x = "Locality",
+    y = "Trait Value" )
+```
+```{r starch_plot, fig.height=4, fig.width=6, fig.fullwidth=TRUE}
+plot_data %>% 
+  filter(Element=="Starch") %>% 
+  ggplot(., aes(x = dog_type, y = value, fill = dog_type, color=dog_type)) +
+  geom_boxplot(width = 0.5, outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, size = 1, alpha = 0.4) +
+  theme_minimal()  +
+  scale_color_manual(
+    name = "Canids",
+    values = type_colors,
+    labels = new_labels
+  ) +
+  scale_fill_manual(
+    name = "Canids",
+    values = type_colors,
+    labels = new_labels
+  ) +
+  theme_classic()+
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_text(size = 12, lineheight = 0.6),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank()
+  )+
+  labs(
+    title = "Starch degradation capacity",
+    y = "Trait Value" )
+```
+
+Differences between domestic dogs and sled dogs
+```{r}
+pairwise_results %>% 
+  filter(comparison=="domestic vs sled_dog") %>% 
+  nrow
+```
+
+```{r barplot_ele_type, comment="", message=FALSE, warning=FALSE, fig.height=60, fig.width=30, fig.fullwidth=TRUE}
+# Filter and reshape data for significant traits
+element_gift <- GIFTs_elements_community %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata %>%  select(sample,dog_type), by="sample")
+
+dog_sled <- pairwise_results %>% 
+  filter(comparison=="domestic vs sled_dog")
+
+plot_data <- element_gift %>%
+  pivot_longer(-c(sample, dog_type), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% dog_sled$trait) %>% 
+  left_join(., uniqueGIFT_db, by=join_by(trait==Code_element)) 
+
+plot_data %>% 
+  filter(dog_type!="wolf") %>% 
+  ggplot(., aes(x = dog_type, y = value, fill = dog_type)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, size = 1, alpha = 0.4) +
+  facet_wrap(~ Function, scales = "free_y", ncol = 4) +
+  theme_minimal() +
+  theme(strip.text = element_text(size = 18))
+  labs(
+    title = "Trait Distributions Across Localities",
+    x = "Locality",
+    y = "Trait Value" )
+```
+
+
+```{r}
+enrichment_results <- GIFTs_elements_community %>%
+  as.data.frame() %>%
+  rownames_to_column(., "sample") %>%
+  filter(sample %in% sample_metadata$sample) %>%
+  left_join(sample_metadata %>% select(sample,dog_type), by="sample")%>%
+  pivot_longer(-c(sample,dog_type),
+               names_to="trait",
+               values_to="value") %>%
+  filter(trait %in% dog_sled$trait) %>% 
+  filter(dog_type!="wolf") %>% 
+  group_by(trait) %>%
+  summarise(
+    median_sled = median(value[dog_type=="sled_dog"]),
+    median_domestic = median(value[dog_type=="domestic"]),
+    log2FC = log2((median_sled + 1) /
+                  (median_domestic + 1)),
+    difference = median_sled - median_domestic) 
+
+enrichment_results %>%
+  left_join(uniqueGIFT_db[c(1:4)], by=join_by(trait==Code_element)) %>% 
+  select(log2FC,Function) %>% 
+  arrange(desc(Function)) %>% 
+  tt()
+```
+
+```{r plot3_sled_dom, comment="", message=FALSE, warning=FALSE}
+uniqueGIFT_db<- unique(GIFT_db[c(2,3,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
+
+enrichment_code <- enrichment_results %>%
+  left_join(uniqueGIFT_db[c(1:4)], by=join_by(trait==Code_element))
+
+unique_codes<-unique(enrichment_code$Code_function)
+
+gift_colors <- read_tsv("data/gift_colors.tsv") %>% 
+  filter(Code_function %in% unique_codes)%>% 
+  mutate(legend=str_c(Code_function," - ",Function))
+```
+
+```{r final_plot_sled_dom, comment="", message=FALSE, warning=FALSE, fig.height=12, fig.width=12, fig.fullwidth=TRUE}
+enrichment_code %>%
+  left_join(gift_colors[c(1,3,4)], by=join_by(Code_function==Code_function))%>%
+  ggplot(aes(x=forcats::fct_reorder(Function,log2FC), y=log2FC, fill=legend)) + 
+  geom_col() +
+  scale_color_manual(values = gift_colors$Color)+
+  geom_hline(yintercept=0) + 
+  coord_flip()+
+  geom_text(aes(55, 0.040), label = "Enriched in\n sled dogs", color="#666666") +
+  geom_text(aes(21, -0.040), label = "Enriched in\n domestic ", color="#666666") +
+  theme(axis.text = element_text(size = 8),
+        axis.title = element_text(size = 12),
+        legend.position = "right",
+        legend.text = element_text(size=8),
+        legend.title = element_blank(),
+        panel.background = element_blank())+
+  xlab("Microbial Functional Capacity") + 
+  ylab("log2FC")
+```
+
+
+Number of enriched functions in each group
+```{r}
+sled_enr <- enrichment_code %>% 
+  left_join(., unique(GIFT_db[c(2,5)]), by=join_by(trait==Code_element)) %>% 
+  filter(log2FC>0) %>% 
+  group_by(Function.y) %>% 
+  summarise(Sled=n())
+
+enrichment_code %>% 
+  left_join(., unique(GIFT_db[c(2,5)]), by=join_by(trait==Code_element)) %>% 
+  filter(log2FC<0) %>% 
+  group_by(Function.y) %>% 
+  summarise(Domestic=n()) %>% 
+  full_join(sled_enr, by="Function.y") %>% 
+  arrange(-Sled)%>%
+  mutate(across(everything(), ~ ifelse(is.na(.), 0, .))) %>% 
+  mutate(difference=Domestic-Sled)
+```
+
+Differences between sled dogs and wolves
+```{r barplot_ele_type2_wolf, comment="", message=FALSE, warning=FALSE, fig.height=60, fig.width=30, fig.fullwidth=TRUE}
+element_gift <- GIFTs_elements_community %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata %>%  select(sample,dog_type) %>% filter(), by="sample")
+
+dog_sledwolf <- pairwise_results %>% 
+  filter(comparison=="sled_dog vs wolf")
+
+plot_data <- element_gift %>%
+  pivot_longer(-c(sample, dog_type), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% dog_sledwolf$trait)%>% 
+  left_join(., uniqueGIFT_db, by=join_by(trait==Code_element)) 
+
+plot_data %>% 
+  filter(dog_type!="domestic") %>% 
+  ggplot(., aes(x = dog_type, y = value, fill = dog_type)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, size = 1, alpha = 0.4) +
+  facet_wrap(~ Function, scales = "free_y", ncol = 4) +
+  theme_minimal() +
+  theme(strip.text = element_text(size = 18))
+  labs(
+    title = "Trait Distributions Across Localities",
+    x = "Locality",
+    y = "Trait Value" )
+```
+
+```{r}
+enrichment_results <- GIFTs_elements_community %>%
+  as.data.frame() %>%
+  rownames_to_column(., "sample") %>%
+  filter(sample %in% sample_metadata$sample) %>%
+  left_join(sample_metadata %>% select(sample,dog_type), by="sample")%>%
+  pivot_longer(-c(sample,dog_type),
+               names_to="trait",
+               values_to="value") %>%
+  filter(trait %in% dog_sledwolf$trait) %>% 
+  filter(dog_type!="domestic") %>% 
+  group_by(trait) %>%
+  summarise(
+    median_sled = median(value[dog_type=="sled_dog"]),
+    median_wolves = median(value[dog_type=="wolf"]),
+    log2FC = log2((median_sled + 1) /
+                  (median_wolves + 1)),
+    difference = median_sled - median_wolves) 
+
+enrichment_results %>%
+  left_join(uniqueGIFT_db[c(1:4)], by=join_by(trait==Code_element)) %>% 
+  nrow()
+enrichment_results %>%
+  left_join(uniqueGIFT_db[c(1:4)], by=join_by(trait==Code_element)) %>% 
+  select(log2FC,Function) %>% 
+  tt()
+```
+
+```{r plot3_sled_domest, comment="", message=FALSE, warning=FALSE}
+uniqueGIFT_db<- unique(GIFT_db[c(2,3,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
+
+enrichment_code <- enrichment_results %>%
+  left_join(uniqueGIFT_db[c(1:4)], by=join_by(trait==Code_element))
+
+unique_codes<-unique(enrichment_code$Code_function)
+
+gift_colors <- read_tsv("data/gift_colors.tsv") %>% 
+  filter(Code_function %in% unique_codes)%>% 
+  mutate(legend=str_c(Code_function," - ",Function))
+```
+
+```{r final_plot_sled_domest, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=12, fig.fullwidth=TRUE}
+enrichment_code %>%
+  left_join(gift_colors[c(1,3,4)], by=join_by(Code_function==Code_function))%>%
+  ggplot(aes(x=forcats::fct_reorder(Function,log2FC), y=log2FC, fill=legend)) + 
+  geom_col() +
+  scale_color_manual(values = gift_colors$Color)+
+  geom_hline(yintercept=0) + 
+  coord_flip()+
+  geom_text(aes(25, 0.040), label = "Enriched in\n sled dogs", color="#666666") +
+  geom_text(aes(9, -0.05), label = "Enriched in\n wolves ", color="#666666") +
+  theme(axis.text = element_text(size = 8),
+        axis.title = element_text(size = 12),
+        legend.position = "right", 
+        panel.background = element_blank())+
+  xlab("Microbial Functional Capacity") + 
+  ylab("log2FC")
+```
+
+Higher in wolves
+```{r}
+enrichment_results %>%
+  left_join(uniqueGIFT_db[c(1:4)], by=join_by(trait==Code_element)) %>% 
+  select(log2FC,Function) %>% 
+  filter(log2FC<0) %>% 
+  tt()
+```
+
+Higher in sled dogs
+```{r}
+enrichment_results %>%
+  left_join(uniqueGIFT_db[c(1:4)], by=join_by(trait==Code_element)) %>% 
+  select(log2FC,Function) %>% 
+  filter(log2FC>0) %>% 
+  tt()
+```
+
+## Community function differences:
+```{r commun_wilcox_func_type, comment="", message=FALSE, warning=FALSE}
+function_gift <- GIFTs_functions_community %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata %>% select(sample, dog_type), by="sample")
+
+uniqueFuncGIFT_db<- unique(GIFT_db[c(3,4,5)])
+
+significant_functions <- function_gift %>%
+    pivot_longer(-c(sample,dog_type), names_to = "trait", values_to = "value") %>%
+    group_by(trait) %>%
+  summarise(p_value = kruskal.test(value ~ dog_type)$p.value) %>%
+  mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
+    filter(p_adjust < 0.05)%>%
+  rownames_to_column(., "functions")  %>% 
+  select(-functions)
+
+selected_data <- function_gift %>%
+  pivot_longer(-c(sample, dog_type), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% significant_functions$trait)
+
+pairwise_results_func <- selected_data %>%
+  group_by(trait) %>%
+  dunn_test(value ~ dog_type, p.adjust.method = "BH")%>% 
+  filter(p.adj<0.05) %>%
+  mutate(comparison = paste(group1, "vs", group2)) %>% 
+  left_join(., uniqueFuncGIFT_db, by=join_by(trait==Code_function))
+```
+
+```{r pairwise_plot_func_type, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=10, fig.fullwidth=TRUE}
+plot_funct <- ggplot(pairwise_results_func, aes(x = comparison, y = fct_rev(Function))) +
+  geom_tile(aes(fill = p.adj), color = "white") +
+  geom_text(aes(label = p.adj.signif), size = 4, color = "black") +
+  scale_fill_gradient(low = "#b30000", high = "#fef0d9" , name = "Adjusted p-value") +
+  theme_minimal() +
+  labs(
+    title = "Significant Pairwise Comparisons by Trait",
+    x = "Locality Comparison",
+    y = "Trait"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+ggsave("Figures/plot_function_dog_type.png", plot = plot_funct, width = 8, height = 8, dpi = 300)
+plot_funct
+```
+
+```{r barplot_func_dog_type, comment="", message=FALSE, warning=FALSE, fig.height=20, fig.width=30, fig.fullwidth=TRUE}
+function_gift <- GIFTs_functions_community %>% 
+  as.data.frame() %>% 
+  rownames_to_column(., "sample") %>% 
+  left_join(sample_metadata%>% select(sample, dog_type), by="sample")
+
+plot_data <- function_gift %>%
+  pivot_longer(-c(sample, dog_type), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% pairwise_results_func$trait)%>% 
+  left_join(., uniqueFuncGIFT_db, by=join_by(trait==Code_function)) 
+
+ggplot(plot_data, aes(x = dog_type, y = value, fill = dog_type)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(width = 0.2, size = 1, alpha = 0.4) +
+  facet_wrap(~ Function, scales = "free_y", ncol = 4) +
+  theme_minimal(base_size = 16) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  labs(
+    title = "Trait Distributions Across Localities",
+    x = "Locality",
+    y = "Trait Value" )
+
+plot_data %>% 
+  group_by(dog_type,Function) %>% 
+  summarise(mean=mean(value)) %>% 
+  pivot_wider(names_from = dog_type, values_from = mean)
+```

@@ -1,0 +1,84 @@
+﻿DogID,Pack,Location,Working_status,Working_status1,Position,Family_notes,Other_notes,Samples
+BLANK_1,Blank,Blank,Blank,Blank,Blank,Blank,Blank,Blank
+BLANK_2,Blank,Blank,Blank,Blank,Blank,Blank,Blank,Blank
+BLANK_3,Blank,Blank,Blank,Blank,Blank,Blank,Blank,Blank
+BLANK_4,Blank,Blank,Blank,Blank,Blank,Blank,Blank,Blank
+GL_01_02,1,Disko Island,Lead,Lead,Runs in front,,Alpha dog,Faecal
+GL_01_03,1,Disko Island,Next_in_line,Follower,NA,,Next in line,Faecal
+GL_01_04,1,Disko Island,Follower,Follower,NA,,,Faecal
+GL_01_05,1,Disko Island,Follower,Follower,NA,,,Faecal
+GL_01_06,1,Disko Island,Too_young,Too_young,NA,,Too young,Faecal
+GL_01_07,1,Disko Island,Follower,Follower,NA,,,Faecal
+GL_02_01,2,Disko Island,Lead,Lead,NA,,Alpha dog,Faecal
+GL_02_02,2,Disko Island,Follower,Follower,NA,Sister to lead dog,,Faecal
+GL_02_03,2,Disko Island,Follower,Follower,NA,Sister to lead dog,,Faecal
+GL_02_04,2,Disko Island,Follower,Follower,NA,Family to lead dog,,Faecal
+GL_02_05,2,Disko Island,Follower,Follower,NA,,Follower,Faecal
+GL_02_06,2,Disko Island,Follower,Follower,NA,,Follower,Faecal
+GL_03_01,3,Disko Island,Follower,Follower,Runs to the left,,,Faecal
+GL_03_02,3,Disko Island,Follower,Follower,Runs in the middle,,,Faecal
+GL_03_03,3,Disko Island,Follower,Follower,Runs in the middle,,,Faecal
+GL_03_04,3,Disko Island,Follower,Follower,Runs in the middle,,,Faecal
+GL_03_05,3,Disko Island,Follower,Follower,Runs in the front,,,Faecal
+GL_03_06,3,Disko Island,Lead,Lead,Runs in the front,,Alpha dog,Faecal
+GL_03_07,3,Disko Island,Follower,Follower,Runs in the middle,,,Faecal
+GL_03_09,3,Disko Island,Follower,Follower,Runs in the middle,,,Faecal
+GL_03_10,3,Disko Island,Follower,Follower,Runs in the middle,,,Faecal
+GL_03_11,3,Disko Island,Follower,Follower,Runs in the front,,,Faecal
+GL_03_12,3,Disko Island,Follower,Follower,Runs in the front,,,Faecal
+GL_03_13,3,Disko Island,Follower,Follower,Runs in the front,,,Faecal
+GL_03_14,3,Disko Island,Follower,Follower,Runs in the front,,,Faecal
+GL_04_01,4,Disko Island,Follower,Follower,Runs to the frony nr 2 to the left,,,Faecal
+GL_04_02,4,Disko Island,Follower,Follower,Runs in the middle,,,Faecal
+GL_04_03,4,Disko Island,Follower,Follower,NA,,Alpha female,Faecal
+GL_04_04,4,Disko Island,Lead,Lead,Runs in the front,,Alpha dog,Faecal
+GL_04_05,4,Disko Island,Follower,Follower,NA,,Alpha female,Faecal
+GL_04_06,4,Disko Island,Follower,Follower,NA,,,Faecal
+GL_04_07,4,Disko Island,Follower,Follower,NA,,,Faecal
+GL_04_08,4,Disko Island,Follower,Follower,NA,,,Faecal
+GL_04_09,4,Disko Island,Follower,Follower,NA,,,Faecal
+GL_04_10,4,Disko Island,Follower,Follower,NA,,,Faecal
+GL_05_01,5,Disko Island,Too_young,Too_young,NA,,Too young,Faecal
+GL_05_02,5,Disko Island,Follower,Follower,Runs in the front nr 2 to the right,Family with 6 + 7,,Faecal
+GL_05_03,5,Disko Island,Too_young,Too_young,NA,Puppy to nr 4,Too young,Faecal
+GL_05_04,5,Disko Island,Follower,Follower,Runs in the front,,,Faecal
+GL_05_06,5,Disko Island,Follower,Follower,Runs in the front,Family with 2 +7,,Faecal
+GL_05_07,5,Disko Island,Follower,Follower,Runs in the front,Family with 2 + 6,,Faecal
+GL_05_09,5,Disko Island,Follower,Follower,Runs in the front,,,Faecal
+GL_05_10,5,Disko Island,Follower,Follower,Runs in the back,,,Faecal
+GL_05_11,5,Disko Island,Follower,Follower,Runs in the back,,,Faecal
+GL_05_12,5,Disko Island,Lead,Lead,Runs in the front to the right,,Alpha dog,Faecal
+GL_06_01,6,Disko Island,Lead,Lead,Runs in front,,Next to be alpha,Faecal
+GL_06_02,6,Disko Island,Follower,Follower,NA,,Alpha dog,Faecal
+GL_06_03,6,Disko Island,Follower,Follower,Runs in one of the sides,Family with 5,,Faecal
+GL_06_04,6,Disko Island,Follower,Follower,Runs where there is space/needed,,,Faecal
+GL_06_05,6,Disko Island,Follower,Follower,Runs in one of the sides,Family with 3,,Faecal
+GL_06_06,6,Disko Island,Follower,Follower,Runs in the middle,,Wants to be alpha,Faecal
+GL_07_01,7,Illulissat,Follower,Follower,Runs in the back,,,Faecal
+GL_07_02,7,Illulissat,Follower,Follower,Runs in the front,,,Faecal
+GL_07_03,7,Illulissat,Follower,Follower,Runs in the back,,,Faecal
+GL_07_04,7,Illulissat,Lead,Lead,Runs in the front,Son of lead dog,,Faecal
+GL_07_05,7,Illulissat,Too_young,Too_young,NA,,Too young,Faecal
+GL_07_06,7,Illulissat,Follower,Follower,Runs in the back,,,Faecal
+GL_07_07,7,Illulissat,Too_young,Too_young,NA,,Too young,Faecal
+GL_07_08,7,Illulissat,Follower,Follower,Runs in the back,,Alpha dog,Faecal
+GL_07_09,7,Illulissat,Follower,Follower,Runs in the front,,,Faecal
+GL_07_10,7,Illulissat,Follower,Follower,Runs in the back,,,Faecal
+GL_07_11,7,Illulissat,Follower,Follower,Runs in the back,,,Faecal
+GL_07_12,7,Illulissat,Next_in_line,Follower,Runs in the back,,Next in line to be alpha,Faecal
+GL_08_01,8,Illulissat,Next_in_line,Follower,Runs in the back,,Next in line to be alpha,Faecal
+GL_08_02,8,Illulissat,Follower,Follower,Runs in the front,,,Faecal
+GL_08_03,8,Illulissat,Follower,Follower,Runs in back,,Dont want to lead,Faecal
+GL_08_04,8,Illulissat,Follower,Follower,Runs in front,,,Faecal
+GL_08_05,8,Illulissat,Follower,Follower,NA,,Alpha dog,Faecal
+GL_08_06,8,Illulissat,Follower,Follower,Runs in the front,,,Faecal
+GL_08_07,8,Illulissat,Follower,Follower,Runs in the back,,Daughter to alpha,Faecal
+GL_08_08,8,Illulissat,Follower,Follower,Runs in the back,,,Faecal
+GL_08_10,8,Illulissat,Next_in_line,Follower,Runs in the back,,Next in line to be alpha,Faecal
+GL_08_11,8,Illulissat,Follower,Follower,Runs in the back,,,Faecal
+GL_08_12,8,Illulissat,Lead,Lead,Runs in front,,,Faecal
+GL_08_X,8,Illulissat,Blank,Blank,Extraction blank,,,Blank
+MS_02_06,2,Illulissat,Follower,Follower,,,,Saliva
+MS_03_04,3,Illulissat,Follower,Follower,,,,Saliva
+MS_05_01,5,Illulissat,Too_young,Too_young,,,,Saliva
+MS_08_03,8,Illulissat,Follower,Follower,,,,Saliva

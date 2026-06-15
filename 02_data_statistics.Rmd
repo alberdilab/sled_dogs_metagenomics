@@ -1,0 +1,33 @@
+# Data statistics
+
+```{r load_data_stats}
+load("resources/data.Rdata")
+```
+
+```{r}
+seq <- read_counts %>% 
+  column_to_rownames(., "genome") %>% 
+  colSums() %>% 
+  as.data.frame() %>% 
+  rename(seq=".") %>% 
+  arrange(seq)
+```
+
+## Sample overview 
+
+```{r}
+sample_metadata %>% 
+  nrow()
+```
+
+```{r}
+sample_metadata %>% 
+  group_by(country) %>% 
+  summarise(count=n())
+```
+
+```{r}
+sample_metadata %>% 
+  group_by(dog_type) %>% 
+  summarise(count=n())
+```

@@ -1,0 +1,163 @@
+# Alpha diversity
+
+```{r load_data_alpha, comment="", message=FALSE, warning=FALSE}
+load("data/data.Rdata")
+load("data/alpha_all.RData")
+
+remove_sled <- read_csv("data/sample_metadata.csv") %>% 
+  filter(season=="winter")
+
+sample_metadata <- sample_metadata %>%
+  filter(!sample %in% remove_sled$sample)
+
+genome_counts_filt <- genome_counts_filt %>%
+  select(one_of(c("genome",sample_metadata$sample)))%>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))
+
+genome_metadata <- genome_metadata %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+genome_metadata_bacteria <- genome_metadata %>% 
+  filter(domain=="Bacteria")
+genome_tree <- keep.tip(genome_tree, tip=genome_metadata_bacteria$genome)
+```
+
+```{r alpha_div, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+richness <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 0) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(richness = 1) %>%
+  rownames_to_column(var = "sample")
+
+neutral <- genome_counts_filt %>%
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 1) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(neutral = 1) %>%
+  rownames_to_column(var = "sample")
+
+phylogenetic <- genome_counts_filt %>%
+  filter(genome %in% genome_metadata_bacteria$genome) %>% 
+  column_to_rownames(var = "genome") %>%
+  dplyr::select(where(~ !all(. == 0))) %>%
+  hilldiv(., q = 1, tree = genome_tree) %>%
+  t() %>%
+  as.data.frame() %>%
+  dplyr::rename(phylogenetic = 1) %>%
+  rownames_to_column(var = "sample")
+
+alpha_div <- richness %>%
+  full_join(neutral, by = join_by(sample == sample)) %>%
+  full_join(phylogenetic, by = join_by(sample == sample))
+```
+
+
+## Dog group
+
+```{r alpha_div_diets_summary_all, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "alpha", values_to = "value") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(alpha) %>%
+  summarise(
+     total_mean = mean(value, na.rm = T),
+    total_sd = sd(value, na.rm = T),
+    Dog_mean = mean(value[dog_type == "companion"], na.rm = T),
+    Dog_sd = sd(value[dog_type == "companion"], na.rm = T),
+    Sled_dog_mean = mean(value[dog_type == "sled_dog"], na.rm = T),
+    Sled_dog_sd = sd(value[dog_type == "sled_dog"], na.rm = T),
+    Wolf_mean = mean(value[dog_type == "wolf"], na.rm = T),
+    Wolf_sd = sd(value[dog_type == "wolf"], na.rm = T)
+  ) %>%
+  mutate(
+    total = str_c(round(total_mean, 3), "±", round(total_sd, 3)),
+    "Companion dogs" = str_c(round(Dog_mean, 3), "±", round(Dog_sd, 3)),
+    "Sled dogs" = str_c(round(Sled_dog_mean, 3), "±", round(Sled_dog_sd, 3)),
+    Wolves = str_c(round(Wolf_mean, 3), "±", round(Wolf_sd, 3))
+  ) %>%
+  arrange(-Sled_dog_mean) %>%
+  dplyr::select(alpha, total, "Companion dogs", "Sled dogs", Wolves) %>%
+  tt()
+```
+
+```{r alpha_plots, fig.height=5, fig.width=10, fig.fullwidth=TRUE}
+type_colors <- c('#41B6C0','#E5D388',"#bb6749")
+new_labels <- c(
+    "companion" = "Companion dogs",
+    "sled_dog" = "Sled dogs",
+    "wolf" = "Wolves"
+    )
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  mutate(metric = factor(
+    metric,
+    levels = c("richness", "neutral", "phylogenetic", "functional")
+  )) %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  ggplot(aes(
+    y = value,
+    x = dog_type,
+    group = dog_type,
+    color = dog_type,
+    fill = dog_type
+  )) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  scale_color_manual(
+    name = "Canids",
+    values = type_colors,
+    labels = new_labels
+  ) +
+  scale_fill_manual(
+    name = "Canids",
+    values = type_colors,
+    labels = new_labels
+  ) +
+  facet_wrap(. ~ factor(
+    metric,
+    labels = c(
+      "richness" = "Richness",
+      "neutral" = "Neutral",
+      "phylogenetic" = "Phylogenetic"
+    )
+  ),
+  scales = "free",
+  ncol = 5) +
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_text(size = 12, lineheight = 0.6),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_blank()
+  )
+```
+```{r}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
+  left_join(sample_metadata, by = "sample") %>%
+  group_by(metric) %>%
+  kruskal_test(value ~ dog_type) %>% 
+  adjust_pvalue(method = "BH") %>%
+  filter(p.adj < 0.05) %>% 
+  tt()
+```
+```{r}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic")))%>%
+  left_join(sample_metadata, by = "sample") %>%
+  group_by(metric) %>%
+  wilcox_test(value ~ dog_type, p.adjust.method = "BH")%>% 
+  filter(p.adj < 0.05)
+```

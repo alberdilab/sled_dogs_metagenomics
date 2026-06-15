@@ -1,0 +1,1669 @@
+# Management-associated ecology drives functional restructuring of the gut microbiome in Qimmit
+
+```{r load_data_beta_sled_dogs, comment="", message=FALSE, warning=FALSE}
+set.seed(1234)
+load("resources/data.Rdata")
+load("output/beta.Rdata")
+load("output/alpha_all.Rdata")
+
+
+sample_metadata <- sample_metadata %>% 
+  filter(country=="Greenland") %>%
+  filter(season != "winter") %>% 
+  mutate(
+    dog_group = case_when(
+      locality == "Daneborg" ~ "military",
+      TRUE                   ~ "civilian"
+    )
+  )
+
+alpha_div <- alpha_div %>% 
+  filter(sample %in% sample_metadata$sample)
+
+genome_counts_filt <- genome_counts_filt %>%
+  select(one_of(c("genome",sample_metadata$sample)))%>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))
+
+genome_metadata <- genome_metadata %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+genome_metadata_bacteria <- genome_metadata_bacteria %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+genome_tree <- keep.tip(genome_tree, tip=genome_metadata_bacteria$genome)
+```
+
+## Taxonomy
+**Number of bacteria phyla**
+```{r phyla_sled, comment="", message=FALSE, warning=FALSE}
+genome_metadata %>% 
+  filter(domain == "Bacteria")%>%
+  dplyr::select(phylum) %>%
+  unique() %>%
+  pull() %>%
+  length()
+```
+
+```{r taxonomy_G_barplot_sled, fig.height=6, fig.width=10, fig.fullwidth=TRUE}
+genome_counts_filt %>%
+  mutate(across(-genome, ~ . / sum(.))) %>%
+  pivot_longer(-genome, names_to = "sample", values_to = "count") %>%
+  left_join(., genome_metadata, by = join_by(genome == genome)) %>%
+  left_join(., sample_metadata, by = join_by(sample == sample)) %>%
+  filter(count > 0) %>%
+  ggplot(., aes(x = sample, y = count, fill = phylum, group = phylum)) +
+  geom_bar(stat = "identity", colour = "white", linewidth = 0.1) +
+  scale_fill_manual(values = phylum_colors) +
+  facet_grid(~ locality, scale = "free", space = "free") +
+  guides(fill = guide_legend(ncol = 1)) +
+  theme(
+    axis.title.x = element_blank(),
+    panel.background = element_blank(),
+    panel.border = element_blank(),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    strip.background = element_rect(fill = "white"),
+    strip.text = element_text(size = 8, lineheight = 0.6),
+    strip.placement = "outside",
+    axis.text.x = element_text(size = 7, hjust = 1, angle = 90),
+    axis.ticks.x = element_blank(),
+    axis.line = element_line(
+      linewidth = 0.5,
+      linetype = "solid",
+      colour = "black"
+    )
+  ) +
+  labs(fill = "Phylum", y = "Relative abundance", x = "Samples")
+```
+
+### Phylum relative abundances
+
+```{r taxonomy_phylum_summary_sled, warning=FALSE, comments="", message=FALSE}
+phylum_summary <- genome_counts_filt %>%
+  mutate(across(-genome, ~ . / sum(.))) %>%
+  pivot_longer(-genome, names_to = "sample", values_to = "count") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  left_join(genome_metadata, by = join_by(genome == genome)) %>%
+  group_by(sample, phylum, locality) %>%
+  summarise(relabun = sum(count))
+```
+
+```{r taxonomy_phylum_summary_origin_sled, warning=FALSE, comments="", message=FALSE}
+phylum_summary %>%
+  group_by(phylum) %>%
+  summarise(
+    total_mean = mean(relabun * 100, na.rm = T),
+    total_sd = sd(relabun * 100, na.rm = T),
+    Daneborg_mean = mean(relabun[locality == "Daneborg"] * 100, na.rm = T),
+    Daneborg_sd = sd(relabun[locality == "Daneborg"] * 100, na.rm = T),
+    Disko_mean = mean(relabun[locality == "Disko"] * 100, na.rm = T),
+    Disko_sd = sd(relabun[locality == "Disko"] * 100, na.rm = T),
+    Illulissat_mean = mean(relabun[locality == "Illulissat"] * 100, na.rm = T),
+    Illulissat_sd = sd(relabun[locality == "Illulissat"] * 100, na.rm = T),
+    Ittoqqortoormiit_mean = mean(relabun[locality == "Ittoqqortoormiit"] * 100, na.rm = T),
+    Ittoqqortoormiit_sd = sd(relabun[locality == "Ittoqqortoormiit"] * 100, na.rm = T)
+  ) %>%
+  mutate(
+    Total = str_c(round(total_mean, 4), "±", round(total_sd, 3)),
+    Daneborg = str_c(round(Daneborg_mean, 4), "±", round(Daneborg_sd, 3)),
+    Disko = str_c(round(Disko_mean, 4), "±", round(Disko_sd, 3)),
+    Illulissat = str_c(round(Illulissat_mean, 4), "±", round(Illulissat_sd, 3)),
+    Ittoqqortoormiit = str_c(round(Ittoqqortoormiit_mean, 4), "±", round(Ittoqqortoormiit_sd, 3))
+  ) %>%
+  arrange(-total_mean) %>%
+  dplyr::select(phylum, Total, Daneborg, Disko, Illulissat, Ittoqqortoormiit) %>%
+  rename(Phylum = phylum) %>%
+  tt()
+```
+
+### Upset: shared MAGs
+```{r chart1_sled, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=8, fig.fullwidth=TRUE}
+genome_row <- genome_counts_filt %>%
+  column_to_rownames(., "genome")
+
+sample_metadata_row <- sample_metadata %>%
+  column_to_rownames(., "sample")
+
+all(colnames(genome_row) == sample_metadata$sample)
+common_samples <- intersect(colnames(genome_row), sample_metadata$sample)
+genome_row_aligned <- genome_row[, common_samples, drop = FALSE] %>%
+  rownames_to_column(., "genome")
+sample_metadata_aligned <- sample_metadata_row[common_samples, , drop = FALSE]
+
+genome_counts_rel <- genome_row_aligned %>%
+  mutate(across(-genome, ~ . / sum(.))) %>%
+  column_to_rownames(., "genome")
+
+genome_counts_rel_pa = 1 * (genome_counts_rel > 0)
+table_upset_analysis_cont = t(aggregate(
+  t(genome_counts_rel_pa),
+  by = list(sample_metadata_aligned$locality),
+  FUN = sum
+)[, -1])
+colnames(table_upset_analysis_cont) = levels(as.factor(sample_metadata_aligned$locality))
+table_upset_analysis = (table_upset_analysis_cont > 0) * 1
+table_upset_analysis = data.frame(table_upset_analysis)
+table_upset_analysis = apply(table_upset_analysis, 2, as.integer)
+rownames(table_upset_analysis) <- rownames(genome_counts_rel_pa)
+country_colors <- c('#41B6C0', '#E5D388', "#834630", "#76b183")
+
+upset(
+  as.data.frame(table_upset_analysis),
+  keep.order = T,
+  sets = rev(c("Daneborg", "Ittoqqortoormiit", "Illulissat", "Disko")),
+  sets.bar.color = rev(country_colors),
+  mb.ratio = c(0.55, 0.45),
+  order.by = "freq"
+)
+```
+
+## Alpha diversity
+
+```{r alpha_plots_sled, fig.height=5, fig.width=12, fig.fullwidth=TRUE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+#  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic")))  %>%
+#  mutate(locality=factor(locality,levels=c("Daneborg-Sirius","Ittoqqortoormiit","Illulissat","Disko Island")))%>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>% 
+  ggplot(aes(y = value, x = locality, group=locality, color=locality, fill=locality)) +
+  geom_boxplot(alpha = 0.5, outlier.shape = NA) +
+  geom_jitter(width = 0.2, alpha = 0.5) +
+  scale_color_manual(name="Locality",
+          breaks=c("Daneborg","Ittoqqortoormiit","Illulissat","Disko"),
+          labels=c("Daneborg-Sirius","Ittoqqortoormiit","Illulissat","Disko Island"),
+          values=c('#41B6C0','#E5D388',"#834630","#76b183"))+
+  scale_fill_manual(name="Locality",
+          breaks=c("Daneborg","Ittoqqortoormiit","Illulissat","Disko"),
+          labels=c("Daneborg-Sirius","Ittoqqortoormiit","Illulissat","Disko Island"),
+          values=c('#41B6C0','#E5D388',"#834630","#76b183")) +
+  facet_wrap(. ~factor(metric, labels=c("richness" = "Richness", "neutral" = "Neutral", "phylogenetic" = "Phylogenetic")), scales = "free", ncol = 5) +
+  coord_cartesian(xlim = c(1, NA)) +
+  theme_classic() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_text(size = 12, lineheight = 0.6),
+    panel.grid.minor.x = element_line(size = .1, color = "grey"),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    axis.text.x = element_blank()
+  )
+```
+
+```{r alpha_values_season_sled, comment="", message=FALSE, warning=FALSE}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "alpha", values_to = "value") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(alpha) %>%
+  summarise(
+    total_mean = mean(value, na.rm = T),
+    total_sd = sd(value, na.rm = T),
+    Daneborg_mean = mean(value[locality == "Daneborg"], na.rm =T),
+    Daneborg_sd = sd(value[locality == "Daneborg"], na.rm =T),
+    Disko_mean = mean(value[locality == "Disko"], na.rm = T),
+    Disko_sd = sd(value[locality == "Disko"], na.rm =T),
+    Illulissat_mean = mean(value[locality == "Illulissat"], na.rm = T),
+    Illulissat_sd = sd(value[locality == "Illulissat"], na.rm = T),
+    Ittoqqortoormiit_mean = mean(value[locality == "Ittoqqortoormiit"], na.rm = T),
+    Ittoqqortoormiit_sd = sd(value[locality == "Ittoqqortoormiit"], na.rm = T)) %>%
+  mutate(
+    Total = str_c(round(total_mean, 2), "±", round(total_sd, 2)),
+    "Daneborg-Sirius" = str_c(round(Daneborg_mean, 2), "±", round(Daneborg_sd, 2)),
+    "Disko Island" = str_c(round(Disko_mean, 2), "±", round(Disko_sd, 2)),
+    Illulissat = str_c(round(Illulissat_mean, 2), "±", round(Illulissat_sd, 2)),
+    Ittoqqortoormiit = str_c(round(Ittoqqortoormiit_mean, 2), "±", round(Ittoqqortoormiit_sd, 2))
+  ) %>%
+  arrange(-total_mean) %>%
+  dplyr::select(alpha,Total, "Daneborg-Sirius",Ittoqqortoormiit, Illulissat, "Disko Island") %>% 
+  rename(Alpha=alpha) %>% 
+  tt()
+```
+
+```{r}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic"))) %>%
+  left_join(sample_metadata, by = "sample") %>%
+  group_by(metric) %>%
+  kruskal_test(value ~ locality) %>% 
+  adjust_pvalue(method = "BH") %>%
+  filter(p.adj < 0.05) %>% 
+  tt()
+```
+
+Significant
+```{r}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic")))%>%
+  left_join(sample_metadata, by = "sample") %>%
+  group_by(metric) %>%
+  wilcox_test(value ~ locality, p.adjust.method = "BH")%>% 
+  filter(p.adj < 0.05)
+```
+
+Non-significant
+```{r}
+alpha_div %>%
+  pivot_longer(-sample, names_to = "metric", values_to = "value") %>%
+  mutate(metric=factor(metric,levels=c("richness","neutral","phylogenetic")))%>%
+  left_join(sample_metadata, by = "sample") %>%
+  group_by(metric) %>%
+  wilcox_test(value ~ locality, p.adjust.method = "BH")%>% 
+  filter(p.adj > 0.05)
+```
+
+
+## Beta diversity
+
+### Richness
+
+**PERMANOVA**
+```{r permanova_greenland_q0_sled, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+beta_q0n_mat <- as.matrix(beta_q0n$S)
+beta_q0n_filtered <- beta_q0n_mat[rownames(beta_q0n_mat) %in% sample_metadata$sample,
+                        colnames(beta_q0n_mat) %in% sample_metadata$sample]
+beta_q0n_dis <- as.dist(beta_q0n_filtered)
+
+sample_metadata_ordered <- sample_metadata %>% 
+  arrange(match(sample,labels(beta_q0n_dis))) %>% 
+  column_to_rownames(., "sample")
+            
+all(rownames(sample_metadata_ordered) == labels(beta_q0n_dis))
+
+betadisper(beta_q0n_dis, sample_metadata_ordered$locality) %>% permutest(., pairwise = TRUE) 
+
+adonis2(beta_q0n_dis ~ locality, 
+        data = sample_metadata_ordered, 
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+
+pairwise.adonis(beta_q0n_dis, sample_metadata_ordered$locality, perm = 999)
+```
+
+**NMDS**
+```{r beta_div_nmds_neutral_plot_G_sled, comment="", message=FALSE, warning=FALSE, fig.height=5, fig.width=10, fig.fullwidth=TRUE, eval=FALSE}
+beta_q0n_dis %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(locality) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = locality)) +
+    geom_point(size = 4) +
+    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+    theme_classic() +
+    theme(
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 12),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
+      panel.background = element_blank(),
+      axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 14),
+      legend.position = "right", legend.box = "vertical"
+    ) +labs(color='Locality')
+```
+
+### Neutral
+
+**PERMANOVA**
+```{r q1_greenland, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+# mat <- genome_counts_filt %>%
+#   column_to_rownames("genome") %>%
+#   filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+#   select(where(~ !all(. == 0)))
+# labs <- colnames(mat)
+# 
+# beta_q1n <- hillpair(mat, q = 1)
+# attr(beta_q1n$S, "Labels") <- labs
+# beta_q1n <-beta_q1n$S
+# save(beta_q1n,file="output/beta_q1n_greenland.RData")
+```
+```{r permanova_greenland_q1_sled, comment="", message=FALSE, warning=FALSE}
+# sample_metadata <- sample_metadata %>% 
+#   filter(!str_starts(sample, "GL_02"))
+# 
+# load("output/beta_q1n_greenland.RData")
+beta_q1n_mat <- as.matrix(beta_q1n$S)
+
+beta_q1n_filtered <- beta_q1n_mat[rownames(beta_q1n_mat) %in% sample_metadata$sample,
+                        colnames(beta_q1n_mat) %in% sample_metadata$sample]
+
+beta_q1n_dis <- as.dist(beta_q1n_filtered)
+
+sample_metadata_ordered <- sample_metadata %>% 
+  arrange(match(sample,labels(beta_q1n_dis))) %>% 
+  column_to_rownames(., "sample")
+            
+all(rownames(sample_metadata_ordered) == labels(beta_q1n_dis))
+
+betadisper(beta_q1n_dis, sample_metadata_ordered$locality) %>% permutest(., pairwise = TRUE) 
+
+adonis2(beta_q1n_dis ~ locality, 
+        data = sample_metadata_ordered, 
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+pairwise.adonis(beta_q1n_dis, sample_metadata_ordered$locality, perm = 999)
+```
+
+**NMDS**
+```{r beta_div_neutral_G_sled, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=12, fig.fullwidth=TRUE}
+beta_q1n_dis %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(locality) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = locality)) +
+    geom_point(size = 3) +
+    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+    scale_color_manual(name="Locality",
+          breaks=c("Daneborg","Ittoqqortoormiit","Illulissat","Disko"),
+          labels=c("Daneborg-Sirius","Ittoqqortoormiit","Illulissat","Disko Island"),
+          values=c('#41B6C0','#E5D388',"#834630","#76b183"))+
+    theme_classic() +
+    theme(
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 12),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
+      panel.background = element_blank(),
+      axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 14),
+      legend.position = "right", legend.box = "vertical"
+    ) +
+  labs(color='Locality')
+```
+
+***Centroid distance based on the NMDS***
+```{r}
+betadisper_obj <- betadisper(beta_q1n_dis, sample_metadata_ordered$locality)
+dist(betadisper_obj$centroids)
+```
+
+**PCoA**
+```{r}
+pcoa_res <- ape::pcoa(beta_q1n_dis)
+
+pcoa_df <- data.frame(pcoa_res$vectors) %>%
+  rownames_to_column("sample") %>%
+  left_join(sample_metadata, by = "sample")
+
+var_exp <- pcoa_res$values$Relative_eig * 100
+```
+
+```{r pcoa_neutral, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE}
+centroids <- pcoa_df %>%
+  group_by(locality) %>%
+  summarise(
+    Axis.1 = mean(Axis.1),
+    Axis.2 = mean(Axis.2),
+    .groups = "drop"
+  )
+
+ggplot(pcoa_df, aes(Axis.1, Axis.2, color = locality)) +
+  geom_point(size = 3, alpha = 0.7) +
+  stat_ellipse(level = 0.95, linewidth = 1) +
+  geom_point(data = centroids,
+             aes(Axis.1, Axis.2, fill = locality),
+             color = "black",
+             shape = 21,
+             size = 6,
+             show.legend = FALSE) +
+    scale_color_manual(name="Locality",
+          breaks=c("Daneborg","Ittoqqortoormiit","Illulissat","Disko"),
+          labels=c("Daneborg-Sirius","Ittoqqortoormiit","Illulissat","Disko Island"),
+          values=c('#41B6C0','#E5D388',"#834630","#76b183"))+
+  scale_fill_manual(name="Locality",
+          breaks=c("Daneborg","Ittoqqortoormiit","Illulissat","Disko"),
+          labels=c("Daneborg-Sirius","Ittoqqortoormiit","Illulissat","Disko Island"),
+          values=c('#41B6C0','#E5D388',"#834630","#76b183")) +
+  labs(
+    x = paste0("PCoA1 (", round(var_exp[1], 1), "%)"),
+    y = paste0("PCoA2 (", round(var_exp[2], 1), "%)"),
+    color = "Dog type"
+  ) +
+  theme_classic(base_size = 14)
+```
+
+***Centroid distances based on the PCoA***
+```{r}
+centroid_coords <- centroids %>%
+  select(locality, Axis.1, Axis.2)
+
+dist_mat <- dist(centroid_coords[, c("Axis.1", "Axis.2")]) %>% as.matrix()
+
+dist_table <- as.data.frame(as.table(as.matrix(dist_mat))) %>%
+  mutate(
+    group1 = centroids$locality[Var1],
+    group2 = centroids$locality[Var2],
+    distance = Freq
+  ) %>% 
+  select(-Var1, -Var2, -Freq)
+```
+
+```{r centroid_distances_locality, comment="", message=FALSE, warning=FALSE, fig.height=6, fig.width=8, fig.fullwidth=TRUE}
+ggplot(dist_table, aes(x = group1, y = group2, fill = distance)) +
+  geom_tile() +
+  scale_fill_viridis_c() +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle=45, hjust=1),
+        axis.title = element_blank()) +
+  labs(fill="Centroids distance")
+```
+
+### Phylogenetic
+
+**PERMANOVA**
+```{r permanova_greenland_qP_sled, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+beta_q1p_mat <- as.matrix(beta_q1p$S)
+beta_q1p_filtered <- beta_q1n_mat[rownames(beta_q1p_mat) %in% sample_metadata$sample,
+                        colnames(beta_q1p_mat) %in% sample_metadata$sample]
+beta_q1p_dis <- as.dist(beta_q1p_filtered)
+
+sample_metadata_row <- column_to_rownames(sample_metadata, "sample") 
+sample_metadata_ordered <- sample_metadata_row[labels(beta_q1p_dis), ]
+sample_metadata_ordered_row <- sample_metadata_ordered %>% 
+  rownames_to_column("sample")
+
+betadisper(beta_q1p_dis, sample_metadata_ordered$locality) %>% permutest(., pairwise = TRUE) 
+
+adonis2(beta_q1p_dis ~ locality,
+        data = sample_metadata_ordered, 
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+
+pairwise.adonis(beta_q1p_dis, sample_metadata_ordered$locality, perm = 999)
+```
+
+**NMDS**
+```{r beta_div_nmds_phylo1_plot_G, comment="", message=FALSE, warning=FALSE, fig.height=7, fig.width=10, fig.fullwidth=TRUE, eval=FALSE}
+beta_q1p_dis %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(locality) %>%
+  mutate(x_cen = median(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = median(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = locality)) +
+    geom_point(size = 4) +
+    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+  scale_color_manual(
+    name = "Locality",
+    breaks = c("Daneborg", "Ittoqqortoormiit", "Illulissat", "Disko"),
+    values = c('#41B6C0', '#E5D388', "#834630", "#76b183")
+  ) +
+    theme_classic() +
+    theme(
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 12),
+      axis.title = element_text(size = 20, face = "bold"),
+      axis.text = element_text(face = "bold", size = 18),
+      panel.background = element_blank(),
+      axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+      legend.text = element_text(size = 16),
+      legend.title = element_text(size = 18),
+      legend.position = "right", legend.box = "vertical"
+    ) +
+    labs(color='Locality')
+```
+
+### Is there any location closer to domestic dogs?
+```{r load_data_beta_dan, comment="", message=FALSE, warning=FALSE}
+set.seed(1234)
+load("resources/data.Rdata")
+load("output/beta.Rdata")
+
+remove_sled <- sample_metadata %>% 
+  filter(season=="winter")
+
+sample_metadata <- sample_metadata %>%
+  filter(!sample %in% remove_sled$sample) %>%
+  mutate(
+    dog_class = case_when(
+      breed == "Wolf" ~ "wolf",
+      locality == "Disko" ~ "Disko",
+      locality == "Daneborg" ~ "Daneborg",
+      locality == "Illulissat" ~ "Illulissat",
+      locality == "Ittoqqortoormiit" ~ "Ittoqqortoormiit",
+      TRUE ~ "Companion"
+    )
+  ) %>%
+  mutate(dog_group = case_when(locality == "Daneborg" ~ "military", TRUE ~ "civilian"))
+
+genome_counts_filt <- genome_counts_filt %>%
+  select(one_of(c("genome",sample_metadata$sample)))%>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))
+
+genome_metadata <- genome_metadata %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+genome_metadata_bacteria <- genome_metadata_bacteria %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+genome_tree <- keep.tip(genome_tree, tip=genome_metadata_bacteria$genome)
+```
+
+**Neutral**
+```{r permanova_greenland_q1_dan, comment="", message=FALSE, warning=FALSE}
+beta_q1n_mat <- as.matrix(beta_q1n$S)
+
+beta_q1n_filtered <- beta_q1n_mat[rownames(beta_q1n_mat) %in% sample_metadata$sample,
+                        colnames(beta_q1n_mat) %in% sample_metadata$sample]
+
+beta_q1n_distance <- as.dist(beta_q1n_filtered)
+
+sample_metadata_ordered <- sample_metadata %>% 
+  arrange(match(sample,labels(beta_q1n_distance))) %>% 
+  column_to_rownames(., "sample")
+            
+all(rownames(sample_metadata_ordered) == labels(beta_q1n_distance))
+
+betadisper(beta_q1n_distance, sample_metadata_ordered$dog_class) %>% permutest(., pairwise = TRUE) 
+anova(betadisper_obj)
+
+adonis2(beta_q1n_distance ~ dog_class, 
+        data = sample_metadata_ordered, 
+        permutations = 999) %>%
+        broom::tidy() %>%
+        tt()
+
+pairwise.adonis(beta_q1n_distance, sample_metadata_ordered$dog_class, perm = 999)
+```
+
+```{r}
+betadisper_obj <- betadisper(beta_q1n_distance, sample_metadata_ordered$dog_class)
+dist(betadisper_obj$centroids)
+```
+
+```{r beta_div_neutral_dan, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=14, fig.fullwidth=TRUE}
+beta_q1n_distance %>%
+  vegan::metaMDS(., trymax = 500, k = 2, trace=0) %>%
+  vegan::scores() %>%
+  as_tibble(., rownames = "sample") %>%
+  dplyr::left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(dog_class) %>%
+  mutate(x_cen = mean(NMDS1, na.rm = TRUE)) %>%
+  mutate(y_cen = mean(NMDS2, na.rm = TRUE)) %>%
+  ungroup() %>%
+  ggplot(aes(x = NMDS1, y = NMDS2, color = dog_class)) +
+    geom_point(size = 3) +
+    geom_segment(aes(x = x_cen, y = y_cen, xend = NMDS1, yend = NMDS2), alpha = 0.9, show.legend = FALSE) +
+    scale_color_manual(name="Dog group",
+          breaks=c("Companion","Daneborg","Ittoqqortoormiit","Illulissat","Disko", "wolf"),
+          labels=c("Companion","Daneborg-Sirius","Ittoqqortoormiit","Illulissat","Disko Island", "Wolf"),
+          values=c('#41B6C0',"#f5c564","#c49c4b","#9c7c3b", "#614e27","#bb6749"))+
+    theme_classic() +
+    theme(
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 12),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(face = "bold", size = 12),
+      panel.background = element_blank(),
+      axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 14),
+      legend.position = "right", legend.box = "vertical"
+    )
+```
+
+
+## Differential abundance
+```{r phylo_sled, comment="", message=FALSE, warning=FALSE}
+sample_metadata <- sample_metadata %>%
+  filter(!sample %in% remove_sled$sample) %>%
+  filter(country == "Greenland")
+
+genome_counts_filt <- genome_counts_filt %>%
+  select(one_of(c("genome",sample_metadata$sample)))%>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))
+
+genome_metadata <- genome_metadata %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+phylo_samples <- sample_metadata %>%
+  filter(country=="Greenland") %>% 
+  column_to_rownames("sample") %>%
+  sample_data()
+
+phylo_genome <- genome_counts_filt %>%
+  select(one_of(c("genome", rownames(phylo_samples)))) %>%
+  column_to_rownames("genome") %>%
+  otu_table(., taxa_are_rows = TRUE)
+
+phylo_taxonomy <- genome_metadata %>%
+  filter(genome %in% rownames(phylo_genome)) %>%
+  mutate(genome2 = genome) %>% 
+  column_to_rownames("genome2") %>%
+  dplyr::select(domain, phylum, class, order, family, genus, species, genome) %>% 
+  as.matrix() %>%
+  tax_table()
+
+physeq_genome_green <- phyloseq(phylo_genome, phylo_taxonomy, phylo_samples)
+```
+
+### Differences across localities
+
+#### MAG level
+```{r load_all_sled, comment="", message=FALSE, warning=FALSE}
+load("output/ancombc_sled_greenland.Rdata")
+region_pairs_sled <- combn(unique(sample_metadata$locality), 2, simplify = FALSE)
+```
+
+```{r pair_all_sled, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+results_sled_mag <- lapply(region_pairs_sled, function(pair) {
+  subset_idx <- sample_metadata$locality %in% pair
+  
+  sled <-  ancombc2(
+    data = prune_samples(subset_idx, physeq_genome_green),
+    fix_formula = "locality",
+    group = "locality",
+    p_adj_method = "BH",
+    pseudo_sens = TRUE,
+    prv_cut = 0.05,
+    lib_cut = 1000,
+    s0_perc = 0.05,
+    struc_zero = TRUE,
+    neg_lb = FALSE,
+    alpha = 0.05,
+    n_cl = 2,
+    verbose = TRUE,
+    global = FALSE,
+    pairwise = FALSE,
+    dunnet = FALSE,
+    trend = FALSE,
+    iter_control = list(
+      tol = 1e-5,
+      max_iter = 50,
+      verbose = FALSE
+    ),
+    em_control = list(tol = 1e-5, max_iter = 100),
+    mdfdr_control = list(fwer_ctrl_method = "BH", B = 100),
+    trend_control = NULL
+  )
+  sled_table <- sled$res
+  
+  sled_table$comparison <- paste(pair, collapse = "_vs_")
+  
+  return(sled_table)
+})
+
+names(results_sled_mag) <- sapply(region_pairs_sled, paste, collapse = "_vs_")
+
+save(results_sled_mag, file = "output/ancombc_sled_greenland.Rdata")
+```
+
+```{r extract_sled, comment="", message=FALSE, warning=FALSE}
+extract_pair <- function(res, pair) {
+
+  tab <- res
+  if (is.null(tab) || nrow(tab) == 0) return(NULL)
+
+  # Identify country coefficient column
+  coef_cols <- grep("^lfc_locality", colnames(tab), value = TRUE)
+  coef_cols <- coef_cols[!grepl("\\(Intercept\\)", coef_cols)]
+  if (length(coef_cols) == 0) return(NULL)
+
+  coef <- coef_cols[1]  # only one since pairwise subset
+  country_nonref <- sub("^lfc_locality", "", coef)
+  country_ref <- setdiff(pair, country_nonref)
+
+  tibble(
+    taxon       = tab$taxon,
+    model_term  = coef,
+    non_reference = country_nonref,
+    reference     = country_ref,
+    logFC       = tab[[coef]],
+    q_value     = tab[[sub("^lfc_", "q_", coef)]],
+    diff_abn    = tab[[sub("^lfc_", "diff_", coef)]],
+    enriched_in = ifelse(tab[[coef]] > 0, country_nonref, country_ref),
+    depleted_in = ifelse(tab[[coef]] > 0, country_ref, country_nonref),
+    comparison  = paste(pair, collapse = "_vs_")
+  )
+}
+pairwise_tables_greenland <- map2(
+  results_sled_mag,
+  region_pairs_sled,
+  extract_pair
+)
+pairwise_tables_greenland <- discard(pairwise_tables_greenland, is.null)
+
+final_table_tables_greenland <- bind_rows(pairwise_tables_greenland)
+nrow(final_table_tables_greenland)
+table(final_table_tables_greenland$comparison)
+
+sig_taxa_tables_greenland <- final_table_tables_greenland %>%
+  filter(q_value < 0.05) %>% 
+  left_join(genome_metadata %>% select(genome, phylum), by=join_by("taxon"=="genome"))
+```
+
+```{r loop_plots_sled, comment="", message=FALSE, warning=FALSE, fig.height=20, fig.width=10, fig.fullwidth=TRUE, eval=FALSE}
+taxonomy <- data.frame(physeq_genome_green@tax_table) %>%
+  distinct(phylum) %>% 
+  rownames_to_column(., "taxon")
+
+unique_contrasts <- unique(sig_taxa_tables_greenland$comparison)
+
+colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
+  mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
+  right_join(taxonomy, by = join_by(phylum == phylum)) %>%
+  dplyr::select(phylum, colors) %>%
+  mutate(colors = str_c(colors, "80"))  %>% 
+  unique() %>%
+  dplyr::arrange(phylum)
+
+for (c in unique_contrasts) {
+
+  subset_data <- sig_taxa_tables_greenland %>%
+    filter(comparison == c) %>%
+    arrange(enriched_in, logFC) %>%
+    mutate(taxon_ordered = factor(taxon, levels = unique(taxon)))
+  
+  non_ref <- unique(subset_data$non_reference)
+  ref <- unique(subset_data$reference)
+  title <- paste0("Enriched in ", ref, " (− LFC) vs  ", "Enriched in ", non_ref, " (+ LFC)")
+
+  tax_color <- as.data.frame(unique(subset_data$phylum)) %>%
+    rename(phylum = 1) %>%
+    left_join(., colors_alphabetic, by = "phylum") %>%
+    dplyr::arrange(phylum) %>%
+    dplyr::select(colors) %>%
+    pull()
+  
+  p <- ggplot(subset_data, aes(x = taxon_ordered, y = logFC, fill = phylum)) +
+    geom_bar(stat = "identity") +
+    coord_flip() +
+    theme(
+      panel.background = element_blank(),
+      axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+      axis.text.x = element_text(size = 12),
+      axis.text.y = element_text(size = 6),
+      axis.title = element_text(size = 14, face = "bold"),
+      legend.text = element_text(size = 12),
+      legend.title = element_text(size = 14, face = "bold"),
+      legend.position = "right",
+      legend.box = "vertical",
+      plot.title = element_text(size = 14, face = "bold", hjust = 0.5)
+    ) +
+    scale_fill_manual(values = tax_color) +
+    labs(
+      title = title,
+      x = "MAGs",
+      y = "Log-Fold Change",
+      fill = "Phylum"
+    )
+  
+  ggsave(paste0("output/figures/Fig_", gsub(" ", "_", c), ".png"), plot = p, width = 10, height = 25, dpi = 300)
+}
+```
+
+**Daneborg-Sirius vs Disko Island**
+
+***Enriched in Daneborg-Sirius***
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Disko") %>%
+  filter(logFC < 0) %>%
+  nrow()
+```
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Disko") %>%
+  filter(logFC < 0) %>%
+  group_by(phylum, family, genus, species) %>%
+  summarise(Mags = n(), .groups = "drop") %>%
+  arrange(-Mags)
+```
+
+***Enriched in Disko Island***
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Disko") %>%
+  filter(logFC > 0) %>%
+  nrow()
+```
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Disko") %>%
+  filter(logFC > 0) %>%
+  group_by(phylum, family, genus, species) %>%
+  summarise(Mags = n(), .groups = "drop") %>%
+  arrange(-Mags)
+```
+
+**Daneborg-Sirius vs Illulissat**
+
+***Enriched in Daneborg-Sirius***
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Illulissat") %>%
+  filter(logFC < 0) %>%
+  nrow()
+```
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Illulissat") %>%
+  filter(logFC < 0) %>%
+  group_by(phylum, family, genus, species) %>%
+  summarise(Mags = n(), .groups = "drop") %>%
+  arrange(-Mags)
+```
+
+***Enriched in Illulissat***
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Illulissat") %>%
+  filter(logFC > 0) %>%
+  nrow()
+```
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Illulissat") %>%
+  filter(logFC > 0) %>%
+  group_by(phylum, family, genus, species) %>%
+  summarise(Mags = n(), .groups = "drop") %>%
+  arrange(-Mags)
+```
+
+**Daneborg-Sirius vs Ittoqqortoormiit**
+
+***Enriched in Daneborg-Sirius***
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Ittoqqortoormiit") %>%
+  filter(logFC < 0) %>%
+  nrow()
+```
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Ittoqqortoormiit") %>%
+  filter(logFC < 0) %>%
+  group_by(phylum, family, genus, species) %>%
+  summarise(Mags = n(), .groups = "drop") %>%
+  arrange(-Mags)
+```
+
+***Enriched in Ittoqqortoormiit***
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Ittoqqortoormiit") %>%
+  filter(logFC > 0) %>%
+  nrow()
+```
+```{r}
+sig_taxa_tables_greenland %>%
+  left_join(genome_metadata %>% select(-phylum), by = join_by("taxon" == "genome")) %>%
+  filter(comparison == "Daneborg_vs_Ittoqqortoormiit") %>%
+  filter(logFC > 0) %>%
+  group_by(phylum, family, genus, species) %>%
+  summarise(Mags = n(), .groups = "drop") %>%
+  arrange(-Mags)
+```
+
+### Differences between military and civilian-owned dogs
+
+#### MAG level
+```{r ancom_phylum_sled, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+ancom_rand_output = ancombc2(
+  data = physeq_genome_green,
+  assay_name = "counts",
+  fix_formula = "dog_group",
+  p_adj_method = "BH",
+  pseudo_sens = TRUE,
+  prv_cut = 0,
+  lib_cut = 0,
+  s0_perc = 0.05,
+  group = "dog_group",
+  struc_zero = TRUE,
+  neg_lb = FALSE,
+  alpha = 0.05,
+  n_cl = 2,
+  verbose = TRUE,
+  global = FALSE,
+  pairwise = FALSE,
+  dunnet = FALSE,
+  trend = FALSE,
+  iter_control = list(
+    tol = 1e-5,
+    max_iter = 50,
+    verbose = FALSE
+  ),
+  em_control = list(tol = 1e-5, max_iter = 100),
+  mdfdr_control = list(fwer_ctrl_method = "BH", B = 100),
+  trend_control = NULL
+)
+
+save(ancom_rand_output, 
+     file = "output/ancombc_daneborg_others.Rdata")
+```
+
+```{r ancom_rand_sled, comment="", message=FALSE, warning=FALSE}
+load("output/ancombc_daneborg_others.Rdata")
+taxonomy <- data.frame(physeq_genome_green@tax_table) %>%
+  rownames_to_column(., "taxon")
+
+ancombc_rand_table_mag <- ancom_rand_output$res %>%
+  dplyr::select(taxon, lfc_dog_groupmilitary, q_dog_groupmilitary) %>%
+  filter(q_dog_groupmilitary < 0.05) %>%
+  dplyr::arrange(q_dog_groupmilitary) %>%
+  merge(., taxonomy, by="taxon") %>%
+  dplyr::arrange(lfc_dog_groupmilitary)
+  
+colors_alphabetic <- read_tsv("https://raw.githubusercontent.com/earthhologenome/EHI_taxonomy_colour/main/ehi_phylum_colors.tsv") %>%
+  mutate_at(vars(phylum), ~ str_replace(., "[dpcofgs]__", ""))  %>%
+  right_join(taxonomy, by=join_by(phylum == phylum)) %>%
+  dplyr::select(phylum, colors) %>%
+  mutate(colors = str_c(colors, "80"))  %>%
+	unique() %>%
+	dplyr::arrange(phylum)
+
+tax_table <- as.data.frame(unique(ancombc_rand_table_mag$phylum))
+  
+colnames(tax_table)[1] <- "phylum"
+tax_color <- merge(tax_table, colors_alphabetic, by="phylum")%>%
+	dplyr::arrange(phylum) %>%
+	dplyr::select(colors) %>%
+	pull()
+```
+
+```{r ancombc_rand_plot_sled, comment="", message=FALSE, warning=FALSE, fig.height=20, fig.width=8, fig.fullwidth=TRUE}
+ancombc_rand_table_mag %>%
+  mutate(genome=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
+  ggplot(., aes(x=lfc_dog_groupmilitary, y=forcats::fct_reorder(genome,lfc_dog_groupmilitary), fill=phylum)) + #forcats::fct_rev()
+  geom_col() + 
+  scale_fill_manual(values=tax_color) + 
+  geom_hline(yintercept=0) + 
+  geom_text(aes(3, 445), label = "Enriched in\n military dogs", color="#666666") +
+  geom_text(aes(-5, 145), label = "Enriched in\n civilian-owned\n dogs", color="#666666") +
+  theme(panel.background = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_blank(),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.position = "right", legend.box = "vertical")+
+  xlab("log2FoldChange") + 
+  ylab("Genome")+
+  guides(fill=guide_legend(title="Phylum"))
+```
+
+```{r dif_sled_others_genus, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=8, fig.fullwidth=TRUE}
+genus_matrix <- ancombc_rand_table_mag%>%
+      mutate(taxon=factor(taxon,levels=ancombc_rand_table_mag$taxon)) %>%
+      filter(!is.na(phylum))
+
+genus_matrix <- genus_matrix %>%
+  arrange(desc(-lfc_dog_groupmilitary)) %>%
+  slice_head(n = 30) %>%
+  bind_rows(genus_matrix %>%
+              arrange(-lfc_dog_groupmilitary) %>%
+              slice_head(n = 30)) 
+
+tax_table <- as.data.frame(unique(genus_matrix$phylum))
+  
+colnames(tax_table)[1] <- "phylum"
+tax_color <- merge(tax_table, colors_alphabetic, by = "phylum") %>%
+  dplyr::arrange(phylum) %>%
+  dplyr::select(colors) %>%
+  pull()
+
+genus_matrix %>%
+  ggplot(., aes(x=lfc_dog_groupmilitary, y=forcats::fct_reorder(genome,lfc_dog_groupmilitary), fill=phylum)) + 
+  geom_col() + 
+  scale_fill_manual(values=tax_color) + 
+  geom_hline(yintercept=0) + 
+  geom_text(aes(4.3, 35), label = "Enriched in\n military dogs", color="#666666") +
+  geom_text(aes(-5.6, 20), label = "Enriched in\n civilian-owned\n dogs", color="#666666") +
+  theme(panel.background = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.position = "right", legend.box = "vertical")+
+  xlab("log2FoldChange") + 
+  ylab("Genome") +
+  guides(fill=guide_legend(title="Phylum"))      
+```
+
+***Military dogs***
+```{r}
+ancombc_rand_table_mag %>% 
+  filter(lfc_dog_groupmilitary>0) %>% 
+  arrange(desc(species)) %>% 
+  select(species) %>% 
+  nrow %>% 
+  cat()
+
+ancombc_rand_table_mag %>% 
+  filter(lfc_dog_groupmilitary>0) %>% 
+  group_by(phylum) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count) %>% 
+  tt()
+
+ancombc_rand_table_mag %>% 
+  filter(lfc_dog_groupmilitary>0) %>% 
+  group_by(phylum, family, genus) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count)%>% 
+  tt()
+
+ancombc_rand_table_mag %>% 
+  filter(lfc_dog_groupmilitary>0) %>% 
+  group_by(phylum, family, genus, species) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count) %>% 
+  tt()
+```
+
+***Civilian-owned dogs***
+```{r}
+ancombc_rand_table_mag %>% 
+  filter(lfc_dog_groupmilitary<0) %>% 
+  arrange(desc(species)) %>% 
+  select(species) %>% 
+  nrow()
+
+ancombc_rand_table_mag %>% 
+  filter(lfc_dog_groupmilitary<0) %>% 
+  group_by(phylum) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count)%>% 
+  tt()
+
+ancombc_rand_table_mag %>% 
+  filter(lfc_dog_groupmilitary<0) %>% 
+  group_by(phylum, family, genus) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count)%>% 
+  tt()
+
+ancombc_rand_table_mag %>% 
+  filter(lfc_dog_groupmilitary<0) %>% 
+  group_by(phylum, family, genus, species) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count)%>% 
+  tt()
+```
+
+#### Species level
+```{r}
+genome_tax <- genome_metadata %>%
+  mutate(
+    class  = if_else(is.na(class), paste0(phylum, "_Unclassified"), class),
+    order  = if_else(is.na(order), if_else(
+      str_detect(class, "Unclassified"),
+      class,
+      paste0(class, "_Unclassified")
+    ), order),
+    family = if_else(is.na(family), if_else(
+      str_detect(order, "Unclassified"),
+      order,
+      paste0(order, "_Unclassified")
+    ), family),
+    genus  = if_else(genus == "", if_else(
+      str_detect(family, "Unclassified"),
+      family,
+      paste0(family, "_Unclassified")
+    ), genus),
+    species  = if_else(species == "", if_else(
+      str_detect(genus, "Unclassified"),
+      genus,
+      paste0(genus, "_Unclassified")
+    ), species)
+  )
+```
+
+```{r}
+phylo_samples <- sample_metadata %>%
+  filter(country=="Greenland") %>% 
+  column_to_rownames("sample") %>%
+  sample_data()
+
+phylo_genome <- genome_counts_filt %>% 
+  select(one_of(c("genome", rownames(phylo_samples)))) %>%
+  left_join(genome_tax[c(1,3,4,6,8)], by = "genome") %>% 
+  select(-genome) %>%
+  group_by(phylum, class, family, species) %>%
+  summarise(across(where(is.numeric), \(x) sum(x, na.rm = TRUE)), .groups = "drop")%>% 
+  as.data.frame() %>% 
+  select(-c(phylum,class, family))%>%
+  column_to_rownames("species") %>%
+  otu_table(., taxa_are_rows = TRUE)
+
+physeq_genome_sp <- phyloseq(phylo_genome, phylo_samples)
+
+load("output/ancombc_danenborg_greenland_sp.Rdata")
+```
+
+```{r ancom_sp_sled, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+ancom_rand_output_sp = ancombc2(
+  data = physeq_genome_sp,
+  assay_name = "counts",
+  fix_formula = "dog_group",
+  p_adj_method = "BH",
+  pseudo_sens = TRUE,
+  prv_cut = 0,
+  lib_cut = 0,
+  s0_perc = 0.05,
+  group = "dog_group",
+  struc_zero = TRUE,
+  neg_lb = FALSE,
+  alpha = 0.05,
+  n_cl = 2,
+  verbose = TRUE,
+  global = FALSE,
+  pairwise = FALSE,
+  dunnet = FALSE,
+  trend = FALSE,
+  iter_control = list(
+    tol = 1e-5,
+    max_iter = 50,
+    verbose = FALSE
+  ),
+  em_control = list(tol = 1e-5, max_iter = 100),
+  mdfdr_control = list(fwer_ctrl_method = "BH", B = 100),
+  trend_control = NULL
+)
+
+save(ancom_rand_output_sp, 
+     file = "output/ancombc_danenborg_greenland_sp.Rdata")
+```
+
+```{r}
+ancom_rand_output_sp$res %>%
+  dplyr::select(taxon, lfc_dog_groupmilitary, q_dog_groupmilitary) %>%
+  filter(q_dog_groupmilitary < 0.05) %>% 
+  filter(lfc_dog_groupmilitary>0) %>% 
+  nrow()
+
+ancom_rand_output_sp$res %>% 
+  filter(lfc_dog_groupmilitary>0) %>% 
+  arrange(-lfc_dog_groupmilitary)
+```
+
+```{r}
+ancom_rand_output_sp$res %>%
+  dplyr::select(taxon, lfc_dog_groupmilitary, q_dog_groupmilitary) %>%
+  filter(lfc_dog_groupmilitary < 0.05) %>% 
+  filter(lfc_dog_groupmilitary<0) %>% 
+  nrow()
+
+ancom_rand_output_sp$res %>% 
+  filter(lfc_dog_groupmilitary<0) %>% 
+  arrange(lfc_dog_groupmilitary)
+```
+```{r dif_sled_others_sp, comment="", message=FALSE, warning=FALSE, fig.height=10, fig.width=9, fig.fullwidth=TRUE}
+ancombc_rand_table_sp <- ancom_rand_output_sp$res %>%
+  dplyr::select(taxon, lfc_dog_groupmilitary, q_dog_groupmilitary) %>%
+  filter(q_dog_groupmilitary < 0.05) %>%
+  dplyr::arrange(q_dog_groupmilitary) %>%
+  mutate(taxon = str_remove(taxon, "_Unclassified")) %>%
+  left_join(., taxonomy[c(3,8)] %>% distinct(species, .keep_all = TRUE), by=join_by("taxon"=="species")) %>%
+  left_join(., taxonomy[c(3,7)] %>% distinct(genus, .keep_all = TRUE), by=join_by("taxon"=="genus")) %>%
+  left_join(., taxonomy[c(3,6)] %>% distinct(family, .keep_all = TRUE), by=join_by("taxon"=="family")) %>%
+  mutate(phylum = coalesce(phylum.x, phylum.y, phylum)) %>%
+  select(-phylum.x, -phylum.y)%>%
+  dplyr::arrange(lfc_dog_groupmilitary)
+
+genus_matrix <- ancombc_rand_table_sp %>%
+      mutate(taxon=factor(taxon,levels=ancombc_rand_table_sp$taxon)) %>%
+      filter(!is.na(phylum))
+
+genus_matrix <- genus_matrix %>%
+  arrange(desc(-lfc_dog_groupmilitary)) %>%
+  slice_head(n = 30) %>%
+  bind_rows(genus_matrix %>%
+              arrange(-lfc_dog_groupmilitary) %>%
+              slice_head(n = 30)) 
+
+tax_table <- as.data.frame(unique(genus_matrix$phylum))
+  
+colnames(tax_table)[1] <- "phylum"
+tax_color <- merge(tax_table, colors_alphabetic, by = "phylum") %>%
+  dplyr::arrange(phylum) %>%
+  dplyr::select(colors) %>%
+  pull()
+
+genus_matrix %>%
+  ggplot(., aes(x=lfc_dog_groupmilitary, y=forcats::fct_reorder(taxon,lfc_dog_groupmilitary), fill=phylum)) + 
+  geom_col() + 
+  scale_fill_manual(values=tax_color) + 
+  geom_hline(yintercept=0) + 
+  geom_text(aes(4.3, 45), label = "Enriched in\n military dogs", color="#666666") +
+  geom_text(aes(-4.6, 25), label = "Enriched in\n civilian-owned\n dogs", color="#666666") +
+  theme(panel.background = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 8),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14, face = "bold"),
+        legend.position = "right", legend.box = "vertical")+
+  xlab("log2FoldChange") + 
+  ylab("Species")+
+  guides(fill=guide_legend(title="Phylum"))      
+```
+
+## Functional differences
+
+```{r gift_analysis_func_sled, comment="", message=FALSE, warning=FALSE}
+genome_counts_filt <- genome_counts_filt[genome_counts_filt$genome %in% rownames(genome_gifts),]
+genome_counts_filt <- genome_counts_filt %>%
+  select(genome, all_of(sample_metadata$sample)) %>%
+  column_to_rownames(., "genome") %>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))%>%
+  rownames_to_column(., "genome")
+
+genome_gifts <- genome_gifts[rownames(genome_gifts) %in% genome_counts_filt$genome,]
+genome_gifts <- genome_gifts[, colSums(genome_gifts != 0) > 0]
+
+GIFTs_elements <- to.elements(genome_gifts,GIFT_db)
+GIFTs_elements_filtered <- GIFTs_elements[rownames(GIFTs_elements) %in% genome_counts_filt$genome,]
+GIFTs_elements_filtered <- as.data.frame(GIFTs_elements_filtered) %>% 
+  select_if(~ !is.numeric(.) || sum(.) != 0)
+
+GIFTs_functions <- to.functions(GIFTs_elements_filtered,GIFT_db)
+
+GIFTs_domains <- to.domains(GIFTs_functions,GIFT_db)
+
+genome_counts_row <- genome_counts_filt %>%
+  mutate(across(-genome, ~ . / sum(.))) %>% 
+  column_to_rownames(., "genome") 
+
+GIFTs_elements_community <- to.community(GIFTs_elements_filtered,genome_counts_row,GIFT_db)
+GIFTs_functions_community <- to.community(GIFTs_functions,genome_counts_row,GIFT_db)
+GIFTs_domains_community <- to.community(GIFTs_domains,genome_counts_row,GIFT_db)
+```
+
+### Different localities in Greenland
+
+#### MCI
+
+```{r}
+GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(locality) %>%
+  summarise(MCI = mean(value), sd = sd(value)) %>%
+  mutate(MCI = str_c(round(MCI, 3), "±", round(sd, 3))) %>% 
+  select(-sd) %>% 
+  tt()
+```
+
+```{r}
+MCI_pf <- GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) 
+
+shapiro.test(residuals(lm(value ~ locality, data = MCI_pf))) 
+bartlett.test(value ~ locality, data = MCI_pf)  
+
+kruskal.test(value ~ locality, data = MCI_pf)
+pw <- pairwise.wilcox.test(
+  x = MCI_pf$value,
+  g = MCI_pf$locality,
+  p.adjust.method = "BH"
+)
+
+wilcox_tbl <- pw$p.value %>%
+  as.data.frame() %>%
+  rownames_to_column("group1") %>%
+  pivot_longer(
+    -group1,
+    names_to = "group2",
+    values_to = "p_adjust"
+  ) %>%
+  filter(!is.na(p_adjust)) %>%
+  mutate(
+    comparison = paste(group1, "vs", group2),
+    p_adjust = round(p_adjust, 3),
+    sig = case_when(
+      p_adjust < 0.001 ~ "***",
+      p_adjust < 0.01  ~ "**",
+      p_adjust < 0.05  ~ "*",
+      TRUE ~ ""
+    )
+  ) %>%
+  select(comparison, p_adjust, sig)
+
+wilcox_tbl %>%
+  rename("Compared countries" = comparison,
+         "Adjusted p-value" = p_adjust) %>%
+  tt()
+```
+
+#### Functional pathways
+
+```{r commun_wilcox_elem_sled, comment="", message=FALSE, warning=FALSE}
+element_long <- GIFTs_elements_community %>% 
+  as.data.frame() %>%
+  rownames_to_column(., "sample") %>% 
+  filter(sample %in% sample_metadata$sample) %>% 
+  left_join(sample_metadata %>% select(sample,locality), by="sample") %>%
+  pivot_longer(-c(sample,locality), names_to = "trait", values_to = "value")
+
+uniqueGIFT_db <- unique(GIFT_db[c(2,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
+
+significant_traits <- element_long %>%
+  group_by(trait) %>%
+  summarise(p_value = kruskal.test(value ~ locality)$p.value) %>%
+  mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
+  filter(p_adjust < 0.05) %>%
+  pull(trait)
+
+effect_sizes <- element_long %>%
+  group_by(trait) %>%
+  kruskal_effsize(value ~ locality)
+
+kw_results <- element_long %>%
+  group_by(trait) %>%
+  summarise(p_value = kruskal.test(value ~ locality)$p.value) %>%
+  mutate(p_adjust=p.adjust(p_value, method="BH")) %>%
+  filter(p_adjust < 0.05) %>%
+  left_join(effect_sizes, by = "trait")
+
+pairwise_results <- element_long %>%
+  filter(trait %in% significant_traits) %>%
+  group_by(trait) %>%
+  dunn_test(value ~ locality, p.adjust.method = "BH") %>%
+  filter(p.adj<0.05) %>%
+  mutate(comparison = paste(group1, "vs", group2)) %>%
+  left_join(uniqueGIFT_db, by = join_by(trait == Code_element))
+```
+
+```{r heatmap_sled, comment="", message=FALSE, warning=FALSE, fig.height=20, fig.width=10, fig.fullwidth=TRUE}
+trait_summary <- element_long %>%
+  group_by(trait, locality) %>%
+  summarise(median_value = median(value, na.rm = TRUE), .groups = "drop")
+trait_summary_sig <- trait_summary %>%
+  filter(trait %in% significant_traits)
+
+trait_order <- kw_results %>%
+  arrange(desc(effsize)) %>%
+  pull(trait)
+
+trait_summary_sig$trait <- factor(trait_summary_sig$trait, levels = trait_order)
+
+trait_summary_sig <- trait_summary_sig %>%
+  group_by(trait) %>%
+  mutate(z_value = scale(median_value)[,1]) %>%
+  ungroup() %>% 
+  left_join(uniqueGIFT_db, by = join_by(trait == Code_element))
+
+ggplot(trait_summary_sig,
+       aes(locality, Function, fill = z_value)) +
+  geom_tile() +
+  scale_fill_gradient2(
+    low = "blue",
+    mid = "white",
+    high = "red",
+    midpoint = 0,
+    name = "Relative capacity"
+  ) +
+  theme_minimal()
+```
+```{r heatmap2_sled, comment="", message=FALSE, warning=FALSE, fig.height=20, fig.width=15, fig.fullwidth=TRUE}
+heatmap_matrix <- element_long %>%
+  filter(trait %in% significant_traits) %>%
+  group_by(trait, locality) %>%
+  summarise(median_value = median(value, na.rm = TRUE), .groups = "drop") %>%
+  pivot_wider(names_from = locality, values_from = median_value) %>% 
+  left_join(uniqueGIFT_db %>% select(Code_element,Function), by = join_by(trait == Code_element)) %>% 
+  column_to_rownames(., "Function") %>% 
+  select(-trait) %>% 
+  as.matrix()
+
+heatmap_scaled <- t(scale(t(heatmap_matrix)))
+
+sig_annotation <- kw_results %>% 
+  left_join(uniqueGIFT_db %>% select(Code_element,Function), by = join_by(trait == Code_element)) %>% 
+  select(-trait) %>% 
+  filter(Function %in% rownames(heatmap_matrix)) %>%
+  select(Function, effsize)%>%
+  column_to_rownames("Function") %>%
+  as.data.frame()
+
+pheatmap::pheatmap(
+  heatmap_scaled,
+  annotation_row = sig_annotation,
+  clustering_method = "complete",
+  clustering_distance_rows = "euclidean",
+  clustering_distance_cols = "euclidean",
+  scale = "none",
+  fontsize_row = 12,
+  fontsize_col = 12,
+  border_color = NA
+)
+```
+
+```{r function_plot_sled, comment="", message=FALSE, warning=FALSE, fig.height=20, fig.width=10, fig.fullwidth=TRUE}
+ggplot(pairwise_results, aes(x = comparison, y = fct_rev(Function))) +
+  geom_tile(aes(fill = p.adj), color = "white") +
+  geom_text(aes(label = p.adj.signif), size = 4, color = "black") +
+  scale_fill_gradient(low = "#b30000", high = "#fef0d9" , name = "Adjusted p-value") +
+  theme_minimal() +
+  labs(
+    title = "Significant Pairwise Comparisons by Trait",
+    x = "Locality Comparison",
+    y = "Trait"
+  ) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+```
+
+```{r barplot_func_sled_locality, comment="", message=FALSE, warning=FALSE, fig.height=60, fig.width=30, fig.fullwidth=TRUE}
+element_gift <- GIFTs_elements_community %>% 
+  as.data.frame() %>%
+  rownames_to_column(., "sample") %>% 
+  filter(sample %in% sample_metadata$sample) %>% 
+  left_join(sample_metadata %>% select(sample,locality), by="sample")
+
+plot_data <- element_gift %>%
+  pivot_longer(-c(sample, locality), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% pairwise_results$trait)%>% 
+  left_join(., uniqueGIFT_db, by=join_by(trait==Code_element)) 
+
+ggplot(plot_data, aes(x = locality, y = value, fill = locality)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  facet_wrap(~ Function, scales = "free_y", ncol = 4) +
+  theme_minimal(base_size = 16) +
+  theme(strip.text = element_text(size = 25, lineheight = 0.6))+
+  labs(
+    title = "Trait Distributions Across Localities",
+    x = "Locality",
+    y = "Trait Value" )
+```
+
+### Military vs civilian-owned dogs
+```{r}
+sample_metadata <- sample_metadata %>% 
+  mutate(
+    dog_group = case_when(
+      locality == "Daneborg" ~ "military",
+      TRUE                   ~ "civilian"
+    )
+  )
+```
+
+#### MCI
+
+```{r gitfs_functional_group,results=TRUE}
+GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) %>%
+  group_by(dog_group) %>%
+  summarise(MCI = mean(value), sd = sd(value)) %>%
+  tt()
+```
+
+```{r}
+MCI <- GIFTs_functions_community %>%
+  rowMeans() %>%
+  as_tibble(., rownames = "sample") %>%
+  left_join(sample_metadata, by = join_by(sample == sample)) 
+
+shapiro.test(residuals(lm(value ~ dog_group, data = MCI)))
+bartlett.test(value ~ dog_group, data = MCI)
+
+wilcox.test(value ~ dog_group, data = MCI)
+```
+
+#### Functional pathways
+
+```{r}
+enrichment_results <- GIFTs_elements_community %>%
+  as.data.frame() %>%
+  rownames_to_column(., "sample") %>%
+  filter(sample %in% sample_metadata$sample) %>%
+  left_join(sample_metadata %>% select(sample,dog_group), by="sample")%>%
+  pivot_longer(-c(sample,dog_group),
+               names_to="trait",
+               values_to="value") %>%
+  group_by(trait) %>%
+  summarise(
+    p_value = wilcox.test(value ~ dog_group)$p.value,
+    median_military = median(value[dog_group=="military"]),
+    median_civilian = median(value[dog_group=="civilian"]),
+    log2FC = log2((median_military + 1) /
+                  (median_civilian + 1)),
+    difference = median_military - median_civilian) %>%
+  mutate(p_adjust = p.adjust(p_value,"BH")) %>% 
+  filter(p_adjust<0.05) 
+```
+
+```{r plot3_sled, comment="", message=FALSE, warning=FALSE, fig.height=5, fig.width=10, fig.fullwidth=TRUE}
+uniqueGIFT_db<- unique(GIFT_db[c(2,3,4,5,6)]) %>% unite("Function",Function:Element, sep= "_", remove=FALSE)
+
+enrichment_code <- enrichment_results %>%
+  left_join(uniqueGIFT_db[c(1:4)], by=join_by(trait==Code_element))
+
+unique_codes<-unique(enrichment_code$Code_function)
+
+gift_colors <- read_tsv("resources/gift_colors.tsv") %>% 
+  filter(Code_function %in% unique_codes)%>% 
+  mutate(legend=str_c(Code_function," - ",Function))
+gift_color_values <- setNames(gift_colors$Color, gift_colors$legend)
+
+```
+
+```{r final_plot_season, comment="", message=FALSE, warning=FALSE, fig.height=12, fig.width=12, fig.fullwidth=TRUE}
+enrichment_code %>%
+  left_join(
+    gift_colors %>% select(Code_function, Color, legend),
+    by = join_by(Code_function == Code_function)
+  ) %>%
+  ggplot(aes(x = forcats::fct_reorder(Function, log2FC), y = log2FC, fill = legend)) +
+  geom_col() +
+  scale_fill_manual(values = gift_color_values) +
+  geom_hline(yintercept = 0) +
+  coord_flip() +
+  geom_text(aes(85, 0.060), label = "Enriched in\n Sirius dogs", color="#666666") +
+  geom_text(aes(31, -0.050), label = "Enriched in\n civilian dogs", color="#666666") +
+  theme(axis.text = element_text(size = 8),
+        axis.title = element_text(size = 12),
+        legend.position = "right", 
+        panel.background = element_blank())+
+  xlab("Microbial Functional Capacity") + 
+  ylab("log2FC")
+```
+
+**Effect size: log2FC**
+
+***Military***
+```{r}
+enrichment_code %>% 
+  left_join(unique(GIFT_db[c(2,4,5,6)]), by=join_by("trait"=="Code_element")) %>% 
+  filter(log2FC>0) %>% 
+  group_by(Function.y) %>% 
+  summarise(count=n()) %>% 
+  arrange(-count)
+```
+```{r}
+enrichment_code %>% 
+  filter(log2FC>0) %>% 
+    arrange(Function) %>% 
+  select(Function) %>% 
+  pull()
+```
+
+***Civilian***
+```{r}
+enrichment_code %>% 
+  left_join(unique(GIFT_db[c(2,4,5,6)]), by=join_by("trait"=="Code_element")) %>% 
+  filter(log2FC<0) %>% 
+  group_by(Function.y) %>% 
+  summarise(count=n())%>% 
+  arrange(-count)
+```
+
+```{r}
+enrichment_code %>% 
+  filter(log2FC<0) %>% 
+  arrange(Function) %>% 
+  select(Function) %>% 
+  pull()
+```
+
+```{r barplot_func_sled, comment="", message=FALSE, warning=FALSE, fig.height=60, fig.width=30, fig.fullwidth=TRUE}
+element_gift <- GIFTs_elements_community %>% 
+  as.data.frame() %>%
+  rownames_to_column(., "sample") %>% 
+  filter(sample %in% sample_metadata$sample) %>% 
+  left_join(sample_metadata %>% select(sample,dog_group), by="sample")
+
+plot_data <- element_gift %>%
+  pivot_longer(-c(sample, dog_group), names_to = "trait", values_to = "value") %>%
+  filter(trait %in% enrichment_code$trait)%>% 
+  left_join(., uniqueGIFT_db, by=join_by(trait==Code_element)) 
+
+ggplot(plot_data, aes(x = dog_group, y = value, fill = dog_group)) +
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +
+  facet_wrap(~ Function, scales = "free_y", ncol = 4) +
+  theme_minimal(base_size = 16) +
+  labs(
+    title = "Trait Distributions Across Localities",
+    x = "Locality",
+    y = "Trait Value" )
+```

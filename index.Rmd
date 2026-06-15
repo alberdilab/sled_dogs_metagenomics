@@ -1,0 +1,92 @@
+---
+title: "AlberdiLab | Aizpurua et al. 2026"
+subtitle: "Ancestral traits of Greenland’s sled dog gut microbiomes"
+author:
+  - Ostaizka Aizpurua^[University of Copenhagen, ostaizka.aizpurua@sund.ku.dk]
+  - Antton Alberdi^[University of Copenhagen, antton.alberdi@sund.ku.dk]
+date: "Last update: `r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+bibliography: [book.bib, packages.bib]
+url: https://alberdilab.github.io/sled_dogs_metagenomics
+description: |
+  Data analysis code for the study on the study of gut microbiomes of sled dogs and beyond.
+link-citations: yes
+github-repo: alberdilab/sled_dogs_metagenomics
+---
+
+```{r knitr_opts, echo=FALSE}
+knitr::opts_chunk$set(
+    class.source = "script-source",
+    class.output = "script-output",
+    comment = NA)
+```
+
+# Introduction
+
+This webbook contains all the code used for data analysis in study of gut microbiomes of Greenlandic sled dogs.
+
+## Prepare the R environment
+
+### Environment
+
+To reproduce all the analyses locally, clone this repository in your computer using:
+
+```
+RStudio > New Project > Version Control > Git
+```
+
+And indicating the following git repository:
+
+> https://github.com/alberdilab/sled_dogs_metagenomics.git
+
+Once the R project has been created, follow the instructions and code chunks shown in this webbook.
+
+### Libraries
+
+The following R packages are required for the data analysis.
+
+```{r load_libraries, warning=FALSE, comments="", message=FALSE}
+# Base
+library(R.utils)
+library(knitr)
+library(tidyverse)
+library(devtools)
+library(tinytable)
+#library(rairtable)
+#library(janitor)
+#library(broom)
+
+# For tree handling
+library(ape)
+library(phyloseq)
+library(phytools)
+
+# For plotting
+ library(ggplot2)
+ library(ggrepel)
+ library(ggpubr)
+ library(ggnewscale)
+ library(gridExtra)
+ library(ggtreeExtra)
+ library(ggtree)
+# library(ggh4x)
+ library(UpSetR)
+# library(viridis)
+
+# For statistics
+# library(spaa)
+ library(vegan)
+# library(Rtsne)
+# library(geiger)
+# library(hilldiv2)
+ library(distillR)
+# library(ANCOMBC)
+# library(lme4)
+# library(nlme)
+ library(pairwiseAdonis)
+ library(emmeans)
+# library(pheatmap)
+ library(rstatix)
+# library(broom)
+```
