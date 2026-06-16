@@ -235,7 +235,7 @@ function_tree <- function_tree +
             grid.params=list(axis="x", text.size=2, nbreak = 1),
             axis.params=list(vline=TRUE),
             mapping = aes(x=length, y=genome, fill=Completeness),
-                 offset = 3.8,
+                 offset = 3.95,
                  orientation="y",
                  stat="identity") +
             scale_fill_gradient(low = "#cf8888", high = "#a2cc87") +

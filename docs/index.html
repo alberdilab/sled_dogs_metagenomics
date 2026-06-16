@@ -2088,7 +2088,7 @@ color: #a52929;
 <ul>
 <li class="chapter" data-level="5.1" data-path="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html"><a href="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html#filter-data"><i class="fa fa-check"></i><b>5.1</b> Filter data</a></li>
 <li class="chapter" data-level="5.2" data-path="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html"><a href="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html#sample-overview-1"><i class="fa fa-check"></i><b>5.2</b> Sample overview</a></li>
-<li class="chapter" data-level="5.3" data-path="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html"><a href="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html#individuals"><i class="fa fa-check"></i><b>5.3</b> Individuals</a></li>
+<li class="chapter" data-level="5.3" data-path="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html"><a href="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html#sled-dogs-number-of-individuals-ineach-season-and-day"><i class="fa fa-check"></i><b>5.3</b> Sled dogs: number of individuals ineach season and day</a></li>
 <li class="chapter" data-level="5.4" data-path="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html"><a href="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html#taxonomy-overview-1"><i class="fa fa-check"></i><b>5.4</b> Taxonomy overview</a>
 <ul>
 <li class="chapter" data-level="5.4.1" data-path="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html"><a href="differences-in-the-gut-microbiota-community-and-funciton-of-canids.html#stacked-barplot"><i class="fa fa-check"></i><b>5.4.1</b> Stacked barplot</a></li>
@@ -2127,8 +2127,7 @@ color: #a52929;
 <ul>
 <li class="chapter" data-level="6.3.1" data-path="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html"><a href="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html#richness-1"><i class="fa fa-check"></i><b>6.3.1</b> Richness</a></li>
 <li class="chapter" data-level="6.3.2" data-path="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html"><a href="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html#neutral-1"><i class="fa fa-check"></i><b>6.3.2</b> Neutral</a></li>
-<li class="chapter" data-level="6.3.3" data-path="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html"><a href="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html#phylogenetic"><i class="fa fa-check"></i><b>6.3.3</b> Phylogenetic</a></li>
-<li class="chapter" data-level="6.3.4" data-path="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html"><a href="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html#is-there-any-location-closer-to-domestic-dogs"><i class="fa fa-check"></i><b>6.3.4</b> Is there any location closer to domestic dogs?</a></li>
+<li class="chapter" data-level="6.3.3" data-path="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html"><a href="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html#is-there-any-location-closer-to-domestic-dogs"><i class="fa fa-check"></i><b>6.3.3</b> Is there any location closer to domestic dogs?</a></li>
 </ul></li>
 <li class="chapter" data-level="6.4" data-path="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html"><a href="management-associated-ecology-drives-functional-restructuring-of-the-gut-microbiome-in-qimmit.html#differential-abundance"><i class="fa fa-check"></i><b>6.4</b> Differential abundance</a>
 <ul>
@@ -2241,23 +2240,23 @@ color: #a52929;
 <span id="cb2-21"><a href="index.html#cb2-21" tabindex="-1"></a> <span class="fu">library</span>(gridExtra)</span>
 <span id="cb2-22"><a href="index.html#cb2-22" tabindex="-1"></a> <span class="fu">library</span>(ggtreeExtra)</span>
 <span id="cb2-23"><a href="index.html#cb2-23" tabindex="-1"></a> <span class="fu">library</span>(ggtree)</span>
-<span id="cb2-24"><a href="index.html#cb2-24" tabindex="-1"></a><span class="co"># library(ggh4x)</span></span>
+<span id="cb2-24"><a href="index.html#cb2-24" tabindex="-1"></a> <span class="fu">library</span>(ggh4x)</span>
 <span id="cb2-25"><a href="index.html#cb2-25" tabindex="-1"></a> <span class="fu">library</span>(UpSetR)</span>
-<span id="cb2-26"><a href="index.html#cb2-26" tabindex="-1"></a><span class="co"># library(viridis)</span></span>
+<span id="cb2-26"><a href="index.html#cb2-26" tabindex="-1"></a> <span class="fu">library</span>(viridis)</span>
 <span id="cb2-27"><a href="index.html#cb2-27" tabindex="-1"></a></span>
 <span id="cb2-28"><a href="index.html#cb2-28" tabindex="-1"></a><span class="co"># For statistics</span></span>
 <span id="cb2-29"><a href="index.html#cb2-29" tabindex="-1"></a><span class="co"># library(spaa)</span></span>
 <span id="cb2-30"><a href="index.html#cb2-30" tabindex="-1"></a> <span class="fu">library</span>(vegan)</span>
-<span id="cb2-31"><a href="index.html#cb2-31" tabindex="-1"></a><span class="co"># library(Rtsne)</span></span>
+<span id="cb2-31"><a href="index.html#cb2-31" tabindex="-1"></a> <span class="fu">library</span>(Rtsne)</span>
 <span id="cb2-32"><a href="index.html#cb2-32" tabindex="-1"></a><span class="co"># library(geiger)</span></span>
-<span id="cb2-33"><a href="index.html#cb2-33" tabindex="-1"></a><span class="co"># library(hilldiv2)</span></span>
+<span id="cb2-33"><a href="index.html#cb2-33" tabindex="-1"></a> <span class="fu">library</span>(hilldiv2)</span>
 <span id="cb2-34"><a href="index.html#cb2-34" tabindex="-1"></a> <span class="fu">library</span>(distillR)</span>
-<span id="cb2-35"><a href="index.html#cb2-35" tabindex="-1"></a><span class="co"># library(ANCOMBC)</span></span>
-<span id="cb2-36"><a href="index.html#cb2-36" tabindex="-1"></a><span class="co"># library(lme4)</span></span>
-<span id="cb2-37"><a href="index.html#cb2-37" tabindex="-1"></a><span class="co"># library(nlme)</span></span>
+<span id="cb2-35"><a href="index.html#cb2-35" tabindex="-1"></a> <span class="fu">library</span>(ANCOMBC)</span>
+<span id="cb2-36"><a href="index.html#cb2-36" tabindex="-1"></a> <span class="fu">library</span>(lme4)</span>
+<span id="cb2-37"><a href="index.html#cb2-37" tabindex="-1"></a> <span class="fu">library</span>(nlme)</span>
 <span id="cb2-38"><a href="index.html#cb2-38" tabindex="-1"></a> <span class="fu">library</span>(pairwiseAdonis)</span>
 <span id="cb2-39"><a href="index.html#cb2-39" tabindex="-1"></a> <span class="fu">library</span>(emmeans)</span>
-<span id="cb2-40"><a href="index.html#cb2-40" tabindex="-1"></a><span class="co"># library(pheatmap)</span></span>
+<span id="cb2-40"><a href="index.html#cb2-40" tabindex="-1"></a> <span class="fu">library</span>(pheatmap)</span>
 <span id="cb2-41"><a href="index.html#cb2-41" tabindex="-1"></a> <span class="fu">library</span>(rstatix)</span>
 <span id="cb2-42"><a href="index.html#cb2-42" tabindex="-1"></a><span class="co"># library(broom)</span></span></code></pre></div>
 

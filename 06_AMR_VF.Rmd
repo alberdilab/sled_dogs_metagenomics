@@ -508,7 +508,7 @@ sample_vf %>%
 ```{r}
 sample_vf %>%
   kruskal_test(vf ~ dog_group) %>% 
-  adjust_pvalue(method = "BH")
+  adjust_pvalue(method = "BH") %>% 
   tt()
 ```
 
