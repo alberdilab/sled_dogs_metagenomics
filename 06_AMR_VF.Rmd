@@ -2,7 +2,7 @@
 
 ```{r load_data_amr, comment="", message=FALSE, warning=FALSE}
 load("resources/data.Rdata")
-load("output/alpha_all.Rdata")
+load("output/alpha_all.RData")
 
 type_colors <- c('#41B6C0','#E5D388',"#bb6749")
 new_labels <- c(
@@ -27,7 +27,7 @@ locality_labels <- c(
     "Ittoqqortoormiit" = "Ittoqqortoormiit"
     )
 
-remove_sled <- read_csv("resources/sample_metadata.csv") %>% 
+remove_sled <- read_csv("resources/sample_metadata.csv", show_col_types = FALSE) %>% 
   filter(season=="winter")
 
 sample_metadata <- sample_metadata %>%
@@ -42,18 +42,34 @@ sample_metadata <- sample_metadata %>%
       TRUE                   ~ "companion"
     )
   )
+
+genome_counts_filt <- genome_counts_filt %>%
+  select(one_of(c("genome",sample_metadata$sample)))%>%
+  filter(rowSums(. != 0, na.rm = TRUE) > 0) %>%
+  select_if(~!all(. == 0))
+
+genome_metadata <- genome_metadata %>%
+  semi_join(., genome_counts_filt, by = "genome") %>%
+  arrange(match(genome,genome_counts_filt$genome))
+
+genome_metadata_bacteria <- genome_metadata %>% 
+  filter(domain=="Bacteria")
+genome_tree <- keep.tip(genome_tree, tip=genome_metadata_bacteria$genome)
 ```
 
-```{r load_genome_anno, warning=FALSE, comments="", message=FALSE}
-genome_annotations <- read_tsv("resources/gene_annotations.tsv.xz") %>%
+```{r load_genome_anno, warning=FALSE, comment="", message=FALSE}
+genome_annotations <- read_tsv(
+  "resources/gene_annotations.tsv.xz",
+  col_types = cols(.default = col_character(), start = col_double(), end = col_double())
+) %>%
   mutate(genome = str_extract(gene, "^[^^]+")) %>%
-  mutate(ec = str_c("[EC:",ec,"]")) %>% 
+  mutate(ec = if_else(is.na(ec), NA_character_, str_c("[EC:", ec, "]"))) %>% 
   select(genome, everything())
 ```
 
-## Genome lenght
+## Genome length
 
-```{r size_per_sample, warning=FALSE, comments="", message=FALSE}
+```{r size_per_sample, warning=FALSE, comment="", message=FALSE}
 sample_genome_size <- genome_counts_filt %>% 
   mutate(across(-genome,~ .x / sum(.x, na.rm = TRUE))) %>% 
   inner_join(genome_metadata %>% select(genome,length), by = "genome") %>%
@@ -70,7 +86,7 @@ sample_genome_size <- genome_counts_filt %>%
   left_join(sample_metadata,by="sample")
 ```
 
-**Canids**
+### Canids
 ```{r}
 sample_genome_size %>% 
   group_by(dog_type) %>%
@@ -79,7 +95,9 @@ sample_genome_size %>%
     sd = sd(size, na.rm = T)/1000000) %>% 
   arrange(-mean) %>% 
   mutate(length=str_c(round(mean,3),"±",round(sd,3))) %>% 
-  select(dog_type,length) 
+  select(dog_type,length) %>% 
+  rename(Canid=1, "Genome length"=2) %>% 
+  tt()
 ```
 
 ```{r}
@@ -93,16 +111,11 @@ sample_genome_size %>%
 ```{r}
 sample_genome_size %>%
   wilcox_test(size ~ dog_type, p.adjust.method = "BH")%>% 
-  filter(p.adj < 0.05)
+  filter(p.adj < 0.05)%>% 
+  tt()
 ```
 
-```{r}
-sample_genome_size %>%
-  wilcox_test(size ~ dog_type, p.adjust.method = "BH")%>% 
-  filter(p.adj > 0.05)
-```
-
-**Management: Civilian vs Military**
+### Management groups
 ```{r}
 sample_genome_size %>% 
   group_by(dog_group) %>%
@@ -112,7 +125,7 @@ sample_genome_size %>%
   arrange(-mean) %>% 
   mutate(genome_size = str_c(round(mean, 3), " ± ", round(sd, 3))) %>%
   select(dog_group, genome_size) %>%
-  rename(Group = 1, "Genome lenght" = 2)
+  rename(Group = 1, "Genome length" = 2)
 ```
 
 ```{r}
@@ -126,16 +139,18 @@ sample_genome_size %>%
 ```{r}
 sample_genome_size %>%
   wilcox_test(size ~ dog_group, p.adjust.method = "BH") %>%
-  filter(p.adj < 0.05)
+  filter(p.adj < 0.05)%>% 
+  tt()
 ```
 
 ```{r}
 sample_genome_size %>%
   wilcox_test(size ~ dog_group, p.adjust.method = "BH") %>%
-  filter(p.adj > 0.05)
+  filter(p.adj > 0.05)%>% 
+  tt()
 ```
 
-```{r size_per_sample_plot, warning=FALSE, comments="", message=FALSE, fig.height=3, fig.width=4, fig.fullwidth=TRUE}
+```{r size_per_sample_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
 sample_genome_size %>%
   ggplot(aes(x = dog_type, y = size, color = dog_type, fill = dog_type)) +
   geom_jitter(width = 0.2, alpha = 0.7, show.legend = FALSE, size = 0.5) +
@@ -145,6 +160,42 @@ sample_genome_size %>%
   scale_x_discrete(labels = new_labels) +
   theme_classic()+
   theme(
+    axis.text = element_text(size = 10),
+    strip.background = element_blank(),
+    axis.title.y = element_text(size =12, margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.x = element_blank()
+    )+
+  labs(y="Genome length")
+```
+```{r genome_size_per_doggroup_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
+sample_genome_size %>% 
+  mutate(dog_group=factor(dog_group,levels=c("companion","civilian","military", "wolf"))) %>%
+  ggplot(aes(x = dog_group, y = size, color = dog_group, fill = dog_group)) +
+  geom_jitter(width = 0.2, alpha=0.7, show.legend = FALSE, size=0.5) +
+  geom_boxplot(width = 0.5, alpha=0.5,outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values = management_colors) +
+  scale_fill_manual(values = management_colors) +
+  scale_x_discrete(labels = management_labels) +
+  theme_classic() +
+  theme(
+    axis.text = element_text(size = 10),
+    strip.background = element_blank(),
+    axis.title.y = element_text(size = 12, margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.x = element_blank()
+    )+
+  labs(y="Genome length")
+```
+```{r size_per_sled_loc_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
+sample_genome_size %>% 
+  filter(dog_type=="sled_dog") %>% 
+  ggplot(aes(x=locality,y=size,color=locality,fill=locality)) +
+  geom_jitter(width = 0.2, alpha=0.7, show.legend = FALSE, size=0.5) +
+  geom_boxplot(width = 0.5, alpha=0.5,outlier.shape = NA, show.legend = FALSE) +
+  scale_color_manual(values = locality_colors) +
+  scale_fill_manual(values = locality_colors) +
+  scale_x_discrete(labels = locality_labels) +
+  theme_classic() +
+  theme(
     axis.text = element_text(size = 7),
     strip.background = element_blank(),
     axis.title.y = element_text(size = 9, margin = margin(t = 0, r = 20, b = 0, l = 0)),
@@ -153,15 +204,32 @@ sample_genome_size %>%
   labs(y="Genome length")
 ```
 
+```{r}
+sample_genome_size %>%
+  filter(dog_type=="sled_dog") %>% 
+  kruskal_test(size ~ locality) %>% 
+  adjust_pvalue(method = "BH") %>%
+  filter(p.adj < 0.05) %>% 
+  tt()
+```
+
+Significant
+```{r}
+sample_genome_size %>%
+  filter(dog_type=="sled_dog") %>% 
+  wilcox_test(size ~ locality, p.adjust.method = "BH")%>% 
+  filter(p.adj < 0.05)
+```
+
 ## Antimicrobial resistance (AMR)
 
-```{r amr_per_genome, warning=FALSE, comments="", message=FALSE}
+```{r amr_per_genome, warning=FALSE, comment="", message=FALSE}
 genome_amr <- genome_annotations %>% 
   group_by(genome) %>%
   summarise(AMR = sum(resistance_type == "AMR", na.rm = TRUE), .groups = "drop")
 ```
 
-```{r amr_per_sample, warning=FALSE, comments="", message=FALSE}
+```{r amr_per_sample, warning=FALSE, comment="", message=FALSE}
 sample_amr <- genome_counts_filt %>%
   mutate(across(-genome, ~ .x / sum(.x, na.rm = TRUE))) %>%
   inner_join(genome_amr, by = "genome") %>%
@@ -175,7 +243,8 @@ sample_amr <- genome_counts_filt %>%
 ```{r}
 genome_amr %>%
   left_join(genome_metadata, by = "genome") %>%
-  arrange(-AMR)
+  arrange(-AMR)%>% 
+  tt()
 ```
 
 ### Canids
@@ -186,11 +255,11 @@ sample_amr %>%
   arrange(-mean) %>%
   mutate(AMR = str_c(round(mean, 3), " ± ", round(sd, 3))) %>%
   select(dog_type, AMR) %>% 
-  rename(Canid=1)
+  rename(Canid=1)%>% 
+  tt()
 ```
 
-
-```{r amr_per_group_plot, warning=FALSE, comments="", message=FALSE, fig.height=3, fig.width=4, fig.fullwidth=TRUE}
+```{r amr_per_group_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
 sample_amr %>% 
   ggplot(aes(x = dog_type, y = AMR, color = dog_type, fill = dog_type)) +
   geom_jitter(width = 0.2, alpha = 0.7, show.legend = FALSE, size = 0.5) +
@@ -200,9 +269,9 @@ sample_amr %>%
   scale_x_discrete(labels = new_labels)+
   theme_classic() +
   theme(
-    axis.text = element_text(size = 7), 
+    axis.text = element_text(size = 10), 
     strip.background = element_blank(), 
-    axis.title.y = element_text(size = 9, margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.y = element_text(size = 12, margin = margin(t = 0, r = 20, b = 0, l = 0)),
     axis.title.x = element_blank()
   ) +
   labs(y = "AMR")
@@ -219,10 +288,11 @@ sample_amr %>%
 ```{r}
 sample_amr %>%
   wilcox_test(AMR ~ dog_type, p.adjust.method = "BH")%>% 
-  filter(p.adj < 0.05)
+  filter(p.adj < 0.05) %>% 
+  tt()
 ```
 
-### Management: Civilian & Military
+### Management groups
 ```{r}
 sample_amr %>% 
   group_by(dog_group) %>%
@@ -232,12 +302,13 @@ sample_amr %>%
   arrange(-mean) %>% 
   mutate(AMR=str_c(round(mean,3)," ± ",round(sd,3))) %>% 
   select(dog_group, AMR) %>%
-  rename(Group = 1, "Genome lenght" = 2)
+  rename(Group = 1)
 ```
 ```{r}
 sample_amr %>% 
   filter(country=="Greenland") %>%
-  wilcox_test(AMR ~ dog_group)
+  wilcox_test(AMR ~ dog_group) %>% 
+  tt()
 ```
 
 ```{r}
@@ -252,17 +323,11 @@ Significant
 ```{r}
 sample_amr %>%
   wilcox_test(AMR ~ dog_group, p.adjust.method = "BH")%>% 
-  filter(p.adj < 0.05)
+  filter(p.adj < 0.05) %>% 
+  tt()
 ```
 
-Non-sig
-```{r}
-sample_amr %>%
-  wilcox_test(AMR ~ dog_group, p.adjust.method = "BH")%>% 
-  filter(p.adj > 0.05)
-```
-
-```{r amr_per_doggroup_plot, warning=FALSE, comments="", message=FALSE, fig.height=4, fig.width=8, fig.fullwidth=TRUE}
+```{r amr_per_doggroup_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
 sample_amr %>% 
   mutate(dog_group=factor(dog_group,levels=c("companion","civilian","military", "wolf"))) %>%
   ggplot(aes(x=dog_group, y=AMR, color=dog_group, fill=dog_group)) +
@@ -273,15 +338,15 @@ sample_amr %>%
   scale_x_discrete(labels = management_labels) +
   theme_classic() +
   theme(
-    axis.text = element_text(size = 7),
+    axis.text = element_text(size = 10),
     strip.background = element_blank(),
-    axis.title.y = element_text(size = 9, margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.y = element_text(size = 12, margin = margin(t = 0, r = 20, b = 0, l = 0)),
     axis.title.x = element_blank()
     )+
   labs(y="AMR")
 ```
 
-```{r amr_per_sled_loc_plot, warning=FALSE, comments="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
+```{r amr_per_sled_loc_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
 sample_amr %>% 
   filter(dog_type=="sled_dog") %>% 
   ggplot(aes(x=locality,y=AMR,color=locality,fill=locality)) +
@@ -342,7 +407,7 @@ sample_amr %>%
 
 ## Virulence factors
 
-```{r vf_per_genome, warning=FALSE, comments="", message=FALSE}
+```{r vf_per_genome, warning=FALSE, comment="", message=FALSE}
 genome_vf <- genome_annotations %>% 
   group_by(genome) %>%
   summarise(vf = sum(!is.na(vf_type), na.rm = TRUE), .groups = "drop")
@@ -363,7 +428,8 @@ sample_vf <- genome_counts_filt %>%
 ```{r}
 genome_vf %>% 
   left_join(genome_metadata, by="genome") %>% 
-  arrange(-vf)
+  arrange(-vf) %>% 
+  tt()
 ```
 
 
@@ -376,10 +442,12 @@ sample_vf %>%
     sd = sd(vf, na.rm = T)) %>% 
   arrange(-mean) %>% 
   mutate(virulence=str_c(round(mean,3),"±",round(sd,3))) %>% 
-  select(dog_type,virulence) 
+  select(dog_type,virulence) %>%
+  rename("Canid" = 1, "Virulence factor" = 2)%>% 
+  tt()
 ```
 
-```{r vf_per_group_plot, warning=FALSE, comments="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
+```{r vf_per_group_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
 sample_vf %>% 
   ggplot(aes(x=dog_type,y=vf,color=dog_type,fill=dog_type)) +
   geom_jitter(width = 0.2, alpha=0.7, show.legend = FALSE, size=0.5) +
@@ -389,9 +457,9 @@ sample_vf %>%
   scale_x_discrete(labels = new_labels) +
   theme_classic() +
   theme(
-    axis.text = element_text(size = 7),
+    axis.text = element_text(size = 10),
     strip.background = element_blank(),
-    axis.title.y = element_text(size = 9, margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.y = element_text(size = 12, margin = margin(t = 0, r = 20, b = 0, l = 0)),
     axis.title.x = element_blank()
     )+
   labs(y="Virulence factor")
@@ -399,18 +467,13 @@ sample_vf %>%
 
 ```{r}
 sample_vf %>%
-  kruskal_test(vf ~ dog_type) 
-```
-
-```{r}
-sample_vf %>%
-  wilcox_test(vf ~ dog_type, p.adjust.method = "BH")
+  kruskal_test(vf ~ dog_type) %>% 
+  tt()
 ```
 
 ### Management: Civilian & Military
 ```{r}
 sample_vf %>% 
-  filter(country=="Greenland") %>% 
   group_by(dog_group) %>%
   summarise(
     mean = mean(vf, na.rm = T),
@@ -418,19 +481,23 @@ sample_vf %>%
   arrange(-mean) %>% 
   mutate(virulence=str_c(round(mean,3),"±",round(sd,3))) %>% 
   select(dog_group,virulence) %>%
-  rename("Sled dog" = 1, "Virulence factor" = 2)
+  rename("Canid" = 1, "Virulence factor" = 2)%>% 
+  tt()
 ```
-```{r vf_per_military_plot, warning=FALSE, comments="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
+```{r vf_per_military_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
 sample_vf %>% 
-  filter(country=="Greenland") %>% 
+#  filter(country=="Greenland") %>% 
   ggplot(aes(x=dog_group,y=vf,color=dog_group,fill=dog_group)) +
   geom_jitter(width = 0.2, alpha=0.5, show.legend = FALSE) +
   geom_boxplot(width = 0.5, alpha=0.3,outlier.shape = NA, show.legend = FALSE) +
+    scale_color_manual(values = management_colors) +
+  scale_fill_manual(values = management_colors) +
+  scale_x_discrete(labels = management_labels) +
   theme_classic() +
   theme(
-    axis.text = element_text(face = "bold", size = 12),
+    axis.text = element_text(size = 10),
     strip.background = element_blank(),
-    axis.title.y = element_text(face = "bold", size = 14, margin = margin(t = 0, r = 20, b = 0, l = 0)),
+    axis.title.y = element_text(size = 12, margin = margin(t = 0, r = 20, b = 0, l = 0)),
     axis.title.x = element_blank()
     )
 ```
@@ -464,7 +531,7 @@ sample_vf %>%
   wilcox_test(vf ~ locality, p.adjust.method = "BH")%>% 
   filter(p.adj > 0.05)
 ```
-```{r vf_per_sled_loc_plot, warning=FALSE, comments="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
+```{r vf_per_sled_loc_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
 sample_vf %>% 
   filter(dog_type=="sled_dog") %>%
   ggplot(aes(x=locality,y=vf,color=locality,fill=locality)) +
@@ -483,7 +550,7 @@ sample_vf %>%
   labs(y="Virulence factors")
 ```
 
-```{r vf_per_sled_outliers_plot, warning=FALSE, comments="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
+```{r vf_per_sled_outliers_plot, warning=FALSE, comment="", message=FALSE, fig.height=5, fig.width=8, fig.fullwidth=TRUE}
 # metadata_illu <- sample_metadata_illu %>%
 #   rename(sample = DogID) %>%
 #   mutate(pack = replace_na(Pack, "unknown"))
@@ -523,7 +590,7 @@ sample_vf %>%
 
 ## Size-function correlations
 
-```{r size_function_correlation, warning=FALSE, comments="", message=FALSE}
+```{r size_function_correlation, warning=FALSE, comment="", message=FALSE}
 sample_genome_size %>% 
   left_join(sample_amr %>% select(sample,AMR),by="sample") %>% 
   left_join(sample_vf %>% select(sample,vf),by="sample") %>% 
@@ -538,7 +605,7 @@ sample_genome_size %>%
   )
 ```
 
-```{r size_amr_correlation_plot, warning=FALSE, comments="", message=FALSE}
+```{r size_amr_correlation_plot, warning=FALSE, comment="", message=FALSE}
 sample_genome_size %>%
   left_join(sample_amr %>% select(sample, AMR), by = "sample") %>%
   left_join(alpha_div, by = "sample") %>%
@@ -548,7 +615,7 @@ sample_genome_size %>%
   theme_classic()
 ```
 
-```{r size_amr_correlation_plot_group, warning=FALSE, comments="", message=FALSE}
+```{r size_amr_correlation_plot_group, warning=FALSE, comment="", message=FALSE}
 sample_genome_size %>%
   left_join(sample_amr %>% select(sample, AMR), by = "sample") %>%
   left_join(alpha_div, by = "sample") %>%
@@ -560,7 +627,7 @@ sample_genome_size %>%
   theme_classic()+
   labs(y="AMR", x="Genome size", color = "Canids")
 ```
-```{r size_amr_correlation_plot_together, warning=FALSE, comments="", message=FALSE}
+```{r size_amr_correlation_plot_together, warning=FALSE, comment="", message=FALSE}
 sample_genome_size %>%
   left_join(sample_amr %>% select(sample, AMR), by = "sample") %>%
   left_join(alpha_div, by = "sample") %>% 
@@ -627,7 +694,7 @@ df%>%
 model <- lm(vf ~ size * dog_group, data = df)
 summary(model)
 ```
-```{r size_vf_correlation_plot, warning=FALSE, comments="", message=FALSE}
+```{r size_vf_correlation_plot, warning=FALSE, comment="", message=FALSE}
 sample_genome_size %>%
   left_join(sample_vf %>% select(sample, vf), by = "sample") %>%
   left_join(alpha_div, by = "sample") %>%
@@ -637,7 +704,7 @@ sample_genome_size %>%
   theme_classic()
 ```
 
-```{r size_vf_correlation_plot_together, warning=FALSE, comments="", message=FALSE}
+```{r size_vf_correlation_plot_together, warning=FALSE, comment="", message=FALSE}
 sample_genome_size %>%
   left_join(sample_vf %>% select(sample, vf), by = "sample") %>%
   left_join(alpha_div, by = "sample") %>% 
@@ -649,7 +716,7 @@ sample_genome_size %>%
 ```
 
 **AMR and VF correlation colored by genome size**
-```{r size_vf_amr_correlation_plot_group, warning=FALSE, comments="", message=FALSE, fig.height=7, fig.width=12, fig.fullwidth=TRUE}
+```{r size_vf_amr_correlation_plot_group, warning=FALSE, comment="", message=FALSE, fig.height=7, fig.width=12, fig.fullwidth=TRUE}
 sample_amr %>%
   left_join(sample_vf %>% select(sample, vf), by = "sample") %>%
   left_join(sample_genome_size %>% select(sample, size), by = "sample") %>% 
@@ -667,7 +734,7 @@ sample_amr %>%
     axis.text = element_text(face = "bold", size = 12),
     panel.background = element_blank(),
     axis.line = element_line(
-      size = 0.5,
+      linewidth = 0.5,
       linetype = "solid",
       colour = "black"
     ),
