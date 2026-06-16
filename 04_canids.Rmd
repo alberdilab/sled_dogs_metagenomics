@@ -10,23 +10,27 @@ load("output/alpha_all.RData")
 ## Sample overview
 ```{r total, comment="", message=FALSE, warning=FALSE}
 sample_metadata %>% 
-  summarise(total_samples=n())
+  summarise(total_samples=n()) %>% 
+  pull() %>% 
+  cat()
 ```
 
 ```{r summary_sam, comment="", message=FALSE, warning=FALSE}
 sample_metadata %>% 
   group_by(dog_type, season) %>% 
   summarise(n=n()) %>% 
+  rename(Canid=1, Season=2, N=3) %>% 
   tt()
 ```
 
-## Individuals
+## Sled dogs: number of individuals ineach season and day
 
 ```{r summary_greenland, comment="", message=FALSE, warning=FALSE}
 sample_metadata  %>% 
   filter(country=="Greenland") %>% 
-  group_by(dog_type, season, day) %>% 
+  group_by(season, day) %>% 
   summarise(n=n()) %>% 
+  rename(Season=1, Day=2, N=3)%>% 
   tt()
 ```
 
@@ -137,7 +141,8 @@ genome_metadata %>%
   dplyr::select(phylum) %>%
   unique() %>%
   pull() %>%
-  length()
+  length() %>% 
+  cat()
 ```
 
 **Number of Archaea phyla**
@@ -148,7 +153,8 @@ genome_metadata %>%
   dplyr::select(phylum) %>%
   unique() %>%
   pull() %>%
-  length()
+  length() %>% 
+  cat()
 ```
 
 ### Genus and species annotation
@@ -159,7 +165,8 @@ genome_metadata %>%
   filter(species == "") %>%
   summarize(Mag_nospecies = n())%>%
   select(Mag_nospecies) %>% 
-  pull()
+  pull() %>% 
+  cat()
 ```
 ```{r nonspe_phylum, comment="", message=FALSE, warning=FALSE}
 total_mag_phylum <- genome_metadata %>%
@@ -182,7 +189,8 @@ nonspecies <- genome_metadata %>%
     filter(species == "") %>%
     nrow()
 perct <- nonspecies*100/nmags
-perct
+perct %>% 
+  cat()
 ```
 
 **Number of MAGs without genera-level annotation**
@@ -196,7 +204,8 @@ cat(nongenera)
 **Percentage of MAGs without genera-level annotation**
 ```{r gen_percet, comment="", message=FALSE, warning=FALSE}
 perct_g <- nongenera*100/nmags
-perct_g
+perct_g %>% 
+  cat()
 ```
 
 ### Phylum relative abundances
@@ -676,23 +685,6 @@ adonis2(beta_q0n_dis ~ dog_type,
         tt()
 ```
 
-***Locality***
-
-Significant
-```{r par_q0, comment="", message=FALSE, warning=FALSE}
-pair_results <- pairwise.adonis(beta_q0n_dis, sample_metadata_ordered$locality, perm = 999)
-pair_results %>%
-  filter(p.adjusted < 0.05)
-```
-
-No significant
-```{r}
-pair_results %>% 
-  filter(p.adjusted>0.05) %>% 
-  tt()
-```
-
-***Dog group***
 
 Significant
 ```{r}
@@ -756,12 +748,6 @@ Significant
 ```{r}
 pairwise.adonis(beta_q1n_dis, sample_metadata_ordered$dog_type, perm = 999) %>%
   filter(p.adjusted < 0.05)
-```
-
-No significant
-```{r}
-pairwise.adonis(beta_q1n_dis, sample_metadata_ordered$dog_type, perm = 999) %>% 
-  filter(p.adjusted>0.05)
 ```
 
 Centroids
@@ -1387,6 +1373,7 @@ companion %>%
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   select(species, genus, family, everything()) %>% 
   arrange(lfc_dog_typesled_dog) %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1397,7 +1384,8 @@ companion %>%
   filter(species=="") %>% 
   group_by(phylum, family, genus) %>% 
   summarise(count=n()) %>% 
-  arrange(-count) %>% 
+  arrange(-count)%>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1407,6 +1395,7 @@ companion %>%
   group_by(family, genus, species) %>% 
   summarise(Mags=n()) %>% 
   arrange(-Mags) %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1446,6 +1435,7 @@ perc %>%
 sled %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   select(species, genus, family, everything()) %>% 
+  head(10) %>% 
   tt()
 ```
 ```{r sle_phf_sumq1, comment="", message=FALSE, warning=FALSE}
@@ -1456,6 +1446,7 @@ sled %>%
   group_by(phylum, family, genus) %>% 
   summarise(count=n()) %>% 
   arrange(-count) %>% 
+  head(10) %>% 
   tt()
 ```
 ```{r slef_mag_sumq1, comment="", message=FALSE, warning=FALSE}
@@ -1463,13 +1454,17 @@ sled %>%
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus, species) %>% 
   summarise(Mags=n()) %>% 
-  arrange(-Mags)
+  arrange(-Mags)%>% 
+  head(10) %>% 
+  tt()
 
 sled %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus) %>% 
   summarise(Mags=n()) %>% 
-  arrange(-Mags)
+  arrange(-Mags)%>% 
+  head(10) %>% 
+  tt()
 ```
 
 #### Sled dogs vs wolves
@@ -1514,6 +1509,7 @@ perc %>%
 sled %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   select(species, family, everything()) %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1523,6 +1519,7 @@ sled %>%
   group_by(family, genus) %>% 
   summarise(Mags=n()) %>% 
   arrange(-Mags) %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1561,6 +1558,7 @@ perc %>%
 wolf %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   select(species, family, everything()) %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1569,13 +1567,16 @@ wolf %>%
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus, species) %>% 
   summarise(Mags=n()) %>% 
-  arrange(-Mags)
+  arrange(-Mags)%>% 
+  head(10) %>% 
+  tt()
 
 wolf %>% 
   left_join(genome_metadata, by=join_by("taxon"=="genome"))%>% 
   group_by(family, genus) %>% 
   summarise(Mags=n()) %>% 
   arrange(-Mags) %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1750,6 +1751,7 @@ perc %>%
 
 ```{r}
 companion %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1769,6 +1771,7 @@ all %>%
 
 ```{r}
 sled %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -1806,6 +1809,7 @@ wolf %>%
 
 ```{r}
 wolf %>% 
+  head(10) %>% 
   tt()
 ```
 
@@ -2027,7 +2031,8 @@ Differences between companion dogs and sled dogs
 ```{r}
 pairwise_results %>%
   filter(comparison == "companion vs sled_dog") %>%
-  nrow
+  nrow %>% 
+  cat()
 ```
 
 ```{r barplot_ele_type, comment="", message=FALSE, warning=FALSE, fig.height=60, fig.width=30, fig.fullwidth=TRUE}
@@ -2071,11 +2076,11 @@ enrichment_results <- GIFTs_elements_community %>%
     difference = median_sled - median_domestic
   )
 
-enrichment_results %>%
-  left_join(uniqueGIFT_db[c(1:4)], by = join_by(trait == Code_element)) %>%
-  select(log2FC, Function) %>%
-  arrange(desc(Function)) %>%
-  tt()
+# enrichment_results %>%
+#   left_join(uniqueGIFT_db[c(1:4)], by = join_by(trait == Code_element)) %>%
+#   select(log2FC, Function) %>%
+#   arrange(desc(Function)) %>%
+#   tt()
 ```
 
 ```{r plot3_sled_dom, comment="", message=FALSE, warning=FALSE}
@@ -2187,10 +2192,10 @@ enrichment_results %>%
   left_join(uniqueGIFT_db[c(1:4)], by = join_by(trait == Code_element)) %>%
   nrow()
 
-enrichment_results %>%
-  left_join(uniqueGIFT_db[c(1:4)], by = join_by(trait == Code_element)) %>%
-  select(log2FC, Function) %>%
-  tt()
+# enrichment_results %>%
+#   left_join(uniqueGIFT_db[c(1:4)], by = join_by(trait == Code_element)) %>%
+#   select(log2FC, Function) %>%
+#   tt()
 ```
 
 ```{r plot3_sled_domest, comment="", message=FALSE, warning=FALSE}
@@ -2232,21 +2237,23 @@ enrichment_code %>%
   ylab("log2FC")
 ```
 
-Higher in wolves
+Higher in wolves (top 10)
 ```{r}
 enrichment_results %>%
   left_join(uniqueGIFT_db[c(1:4)], by = join_by(trait == Code_element)) %>%
   select(log2FC, Function) %>%
   filter(log2FC < 0) %>%
+  head(10) %>% 
   tt()
 ```
 
-Higher in sled dogs
+Higher in sled dogs (top 10)
 ```{r}
 enrichment_results %>%
   left_join(uniqueGIFT_db[c(1:4)], by = join_by(trait == Code_element)) %>%
   select(log2FC, Function) %>%
   filter(log2FC > 0) %>%
+  head(10) %>% 
   tt()
 ```
 

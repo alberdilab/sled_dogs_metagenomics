@@ -25,7 +25,8 @@ genome_tree <- keep.tip(genome_tree, tip=genome_metadata_bacteria$genome)
 ```{r}
 sample_metadata %>% 
   group_by(season) %>% 
-  summarise(n=n())
+  summarise(n=n()) %>% 
+  tt()
 ```
 
 ## Taxonomy
@@ -157,7 +158,8 @@ ancom_rand_output_phylum_itto = ancombc2(
 ancom_rand_output_phylum_itto$res %>%
   dplyr::select(taxon, lfc_seasonwinter, q_seasonwinter) %>%
   filter(q_seasonwinter < 0.05) %>%
-  dplyr::arrange(q_seasonwinter)
+  dplyr::arrange(q_seasonwinter) %>% 
+  tt()
 ```
 
 ## Alpha diversity
@@ -333,8 +335,9 @@ beta_q1n_dis %>%
   labs(color='Season')
 ```
 
-**Phylogenetic**
-```{r permanova_q1p_filt_season, comment="", message=FALSE, warning=FALSE, eval=FALSE}
+
+```{r permanova_q1p_filt_season, comment="", message=FALSE, warning=FALSE, echo=FALSE, eval=FALSE}
+#Phylogenetic
 beta_q1p_mat <- as.matrix(beta_q1p$S)
 beta_q1p_filtered <- beta_q1p_mat[rownames(beta_q1p_mat) %in% sample_metadata$sample,
                         colnames(beta_q1p_mat) %in% sample_metadata$sample]
@@ -439,7 +442,8 @@ structural_zero_groups %>%
   rownames_to_column(., "genome") %>% 
   left_join(., genome_metadata, by="genome") %>% 
   count(phylum, name = "sample_count") %>%
-  arrange(desc(sample_count)) 
+  arrange(desc(sample_count)) %>% 
+  tt()
 ```
 
 ***Structural zeros in winter***
@@ -453,7 +457,8 @@ structural_zero_groups %>%
   rownames_to_column(., "genome") %>% 
   left_join(., genome_metadata, by="genome") %>% 
   count(phylum, name = "sample_count") %>%
-  arrange(desc(sample_count)) 
+  arrange(desc(sample_count)) %>% 
+  tt()
 ```
 
 ```{r ancom_table_season, comment="", message=FALSE, warning=FALSE}
@@ -507,20 +512,24 @@ ancombc_rand_table_mag_itto %>%
   guides(fill=guide_legend(title="Phylum"))
 ```
 
-Enriched in summer
+Enriched in summer (top 20)
 ```{r}
 ancombc_rand_table_mag_itto %>% 
   filter(lfc_seasonwinter<0) %>% 
   arrange(lfc_seasonwinter) %>% 
-  select(lfc_seasonwinter, genus, species)
+  select(lfc_seasonwinter, genus, species) %>% 
+  head(20) %>% 
+  tt()
 ```
 
-Enriched in winter
+Enriched in winter (top 20)
 ```{r}
 ancombc_rand_table_mag_itto %>% 
   filter(lfc_seasonwinter>0) %>% 
   arrange(-lfc_seasonwinter) %>% 
-  select(lfc_seasonwinter, genus, species)
+  select(lfc_seasonwinter, genus, species)%>% 
+  head(20) %>% 
+  tt()
 ```
 
 ## Functional differences

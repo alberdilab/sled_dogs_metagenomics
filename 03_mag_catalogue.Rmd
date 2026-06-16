@@ -27,7 +27,7 @@ circular_tree <- force.ultrametric(genome_tree, method="extend") %>% # extend to
     ggtree(., layout="fan", open.angle=10, size=0.2)
 
 # Add phylum ring
-circular_tree <- gheatmap(circular_tree, phylum_heatmap, offset=0.05, width=0.05, colnames=FALSE) +
+circular_tree <- gheatmap(circular_tree, phylum_heatmap, offset=0.05, width=0.05, color=NA, colnames=FALSE) +
         scale_fill_manual(values=phylum_colors, name = "Phylum") +
 guides(fill = guide_legend(override.aes = list(alpha = 1)))+
         theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0))
@@ -51,7 +51,7 @@ circular_tree <- circular_tree +
 # Add genome-size ring
 circular_tree <- circular_tree + new_scale_fill()
 
-circular_tree <- gheatmap(circular_tree, newspecies_table, offset=0.15, width=0.05, colnames=FALSE) +
+circular_tree <- gheatmap(circular_tree, newspecies_table, offset=0.15, width=0.05, color=NA, colnames=FALSE) +
         scale_fill_manual(values=c("#f4f4f4","#74C8AE"), name = "New species")+
         theme(legend.position = "none", plot.margin = margin(0, 0, 0, 0), panel.margin = margin(0, 0, 0, 0))
 
@@ -98,7 +98,8 @@ nrow(genome_metadata)
 
 ```{r}
 genome_metadata %>% 
-  distinct(phylum)
+  distinct(phylum) %>% 
+  tt()
 ```
 
 
@@ -117,7 +118,8 @@ tax_mag %>%
 
 ```{r}
 genome_metadata %>% 
-  distinct(phylum, family)
+  distinct(phylum, family) %>% 
+  tt()
 ```
 
 
@@ -198,7 +200,7 @@ grid.arrange(grobs = list(genome_Completeness,genome_biplot,genome_Contamination
 
 ## Functional overview
 
-```{r function_heatmap, message=FALSE, warning=FALSE, fig.height=10, fig.width=10, fig.fullwidth=TRUE}
+```{r function_heatmap, message=FALSE, warning=FALSE, fig.height=20, fig.width=10, fig.fullwidth=TRUE}
 
 # Aggregate basal GIFT into elements
 function_table <- genome_gifts %>%
@@ -209,7 +211,7 @@ function_tree <- force.ultrametric(genome_tree, method="extend") %>%
                 ggtree(., size = 0.3) 
 
 #Add phylum colors next to the tree tips
-function_tree <- gheatmap(function_tree, phylum_heatmap, offset=0, width=0.1, colnames=FALSE) +
+function_tree <- gheatmap(function_tree, phylum_heatmap, offset=0, width=0.1, color=NA, colnames=FALSE) +
             scale_fill_manual(values=phylum_colors) +
             labs(fill="Phylum")
 
@@ -217,7 +219,7 @@ function_tree <- gheatmap(function_tree, phylum_heatmap, offset=0, width=0.1, co
 function_tree <- function_tree + new_scale_fill()
 
 #Add functions heatmap
-function_tree <- gheatmap(function_tree, function_table, offset=0.5, width=3.5, colnames=FALSE) +
+function_tree <- gheatmap(function_tree, function_table, offset=0.5, width=3.5, color=NA, colnames=FALSE) +
             vexpand(.08) +
             coord_cartesian(clip = "off") +
             scale_fill_gradient(low = "#f4f4f4", high = "steelblue", na.value="white") +
@@ -327,6 +329,5 @@ genome_counts_filt %>%
   theme_minimal() + 
   theme(legend.position = "none")
 ```
-
 
 
